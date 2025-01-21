@@ -114,6 +114,39 @@ int main(int, char**)
         while (SDL_PollEvent(&event))
         {
             ImGui_ImplSDL2_ProcessEvent(&event);
+            switch (event.type)
+            {
+                case SDL_QUIT:
+                {
+                    done = true;
+                    break;
+                }
+                case SDL_CONTROLLERDEVICEADDED:
+                {
+                    // Start receiving SDL_CONTROLLER* events.
+                    SDL_GameControllerOpen(event.cdevice.which);
+                    break;
+                }
+                case SDL_CONTROLLERDEVICEREMOVED:
+                {
+                    SDL_GameController* ctr = SDL_GameControllerFromInstanceID(event.cdevice.which);
+                    if (ctr)
+                        SDL_GameControllerClose(ctr);
+                    break;
+                }
+                case SDL_WINDOWEVENT:
+                {
+                    if (event.window.event == SDL_WINDOWEVENT_RESIZED)
+                    {
+                        // Release all outstanding references to the swap chain's buffers before resizing.
+                        CleanupRenderTarget();
+                        g_pSwapChain->ResizeBuffers(0, 0, 0, DXGI_FORMAT_UNKNOWN, 0);
+                        CreateRenderTarget();
+                    }
+                    break;
+                }
+            }
+
             if (event.type == SDL_QUIT)
                 done = true;
             if (event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_CLOSE && event.window.windowID == SDL_GetWindowID(window))
