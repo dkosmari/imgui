@@ -2729,6 +2729,35 @@ IM_MSVC_RUNTIME_CHECKS_RESTORE
 // Helpers macros to generate 32-bit encoded colors
 // - User can declare their own format by #defining the 5 _SHIFT/_MASK macros in their imconfig file.
 // - Any setting other than the default will need custom backend support. The only standard backend that supports anything else than the default is DirectX9.
+#if defined(IMGUI_RGBA_BE) || defined(IMGUI_ABGR_LE)
+#define IM_COL32_R_SHIFT    24
+#define IM_COL32_G_SHIFT    16
+#define IM_COL32_B_SHIFT    8
+#define IM_COL32_A_SHIFT    0
+#define IM_COL32_A_MASK     0x000000FF
+#endif
+#if defined(IMGUI_ABGR_BE) || defined(IMGUI_RGBA_LE)
+#define IM_COL32_A_SHIFT    24
+#define IM_COL32_B_SHIFT    16
+#define IM_COL32_G_SHIFT    8
+#define IM_COL32_R_SHIFT    0
+#define IM_COL32_A_MASK     0xFF000000
+#endif
+#if defined(IMGUI_BGRA_BE) || defined(IMGUI_ARGB_LE)
+#define IM_COL32_B_SHIFT    24
+#define IM_COL32_G_SHIFT    16
+#define IM_COL32_R_SHIFT    8
+#define IM_COL32_A_SHIFT    0
+#define IM_COL32_A_MASK     0x000000FF
+#endif
+#if defined(IMGUI_ARGB_BE) || defined(IMGUI_BGRA_LE)
+#define IM_COL32_A_SHIFT    24
+#define IM_COL32_R_SHIFT    16
+#define IM_COL32_G_SHIFT    8
+#define IM_COL32_B_SHIFT    0
+#define IM_COL32_A_MASK     0xFF000000
+#endif
+
 #ifndef IM_COL32_R_SHIFT
 #ifdef IMGUI_USE_BGRA_PACKED_COLOR
 #define IM_COL32_R_SHIFT    16
