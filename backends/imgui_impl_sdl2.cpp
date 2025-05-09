@@ -145,6 +145,8 @@ struct ImGui_ImplSDL2_Data
     bool                    MouseCanUseGlobalState;
     bool                    MouseCanUseCapture;
 
+    bool                    OldWantTextInput;
+
     ImGui_ImplSDL2_Data()   { memset((void*)this, 0, sizeof(*this)); }
 };
 
@@ -828,6 +830,15 @@ void ImGui_ImplSDL2_NewFrame()
             ++controller_count;
     if (controller_count == 0)
         io.BackendFlags &= ~ImGuiBackendFlags_HasGamepad;
+
+    // If ImGui changed its mind about wanting text input, we need to tell SDL
+    if (io.WantTextInput != bd->OldWantTextInput) {
+        bd->OldWantTextInput = io.WantTextInput;
+        if (io.WantTextInput)
+            SDL_StartTextInput();
+        else
+            SDL_StopTextInput();
+    }
 }
 
 //-----------------------------------------------------------------------------
