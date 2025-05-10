@@ -99,6 +99,7 @@
 #include "imgui.h"
 #ifndef IMGUI_DISABLE
 #include "imgui_impl_sdl2.h"
+#include "imgui_internal.h"
 
 // Clang warnings with -Weverything
 #if defined(__clang__)
@@ -146,6 +147,7 @@ struct ImGui_ImplSDL2_Data
     bool                    MouseCanUseCapture;
 
     bool                    OldWantTextInput;
+    ImGuiID                 OldFocusID;
 
     ImGui_ImplSDL2_Data()   { memset((void*)this, 0, sizeof(*this)); }
 };
@@ -556,6 +558,31 @@ bool ImGui_ImplSDL2_ProcessEvent(const SDL_Event* event)
             ImGui_ImplSDL2_HandleControllerAxes(io, event->caxis);
             return true;
         }
+#ifdef __WIIU__
+        case SDL_SYSWMEVENT:
+        {
+            switch (event->syswm.msg->msg.wiiu.event) {
+                case SDL_WIIU_SYSWM_SWKBD_OK_START_EVENT:
+                {
+                    // About to start sending text input events.
+                    // We clear the current input text state, as it will be populated
+                    // with text input events.
+                    ImGuiID focused = ImGui::GetFocusID();
+                    ImGuiInputTextState* state = ImGui::GetInputTextState(focused);
+                    if (state)
+                        state->ClearText();
+                    return true;
+                }
+                case SDL_WIIU_SYSWM_SWKBD_OK_FINISH_EVENT:
+                    SDL_StopTextInput();
+                    return true;
+                case SDL_WIIU_SYSWM_SWKBD_CANCEL_EVENT:
+                    SDL_StopTextInput();
+                    return true;
+            }
+            return false;
+        }
+#endif
     }
     return false;
 }
@@ -652,6 +679,11 @@ static bool ImGui_ImplSDL2_Init(SDL_Window* window, SDL_Renderer* renderer, void
     // From 2.0.22: Disable auto-capture, this is preventing drag and drop across multiple windows (see #5710)
 #ifdef SDL_HINT_MOUSE_AUTO_CAPTURE
     SDL_SetHint(SDL_HINT_MOUSE_AUTO_CAPTURE, "0");
+#endif
+
+#ifdef __WIIU__
+    // Receive notifications about the swkbd closing.
+    SDL_EventState(SDL_SYSWMEVENT, SDL_ENABLE);
 #endif
 
     (void)sdl_gl_context; // Unused in 'master' branch.
@@ -832,13 +864,42 @@ void ImGui_ImplSDL2_NewFrame()
         io.BackendFlags &= ~ImGuiBackendFlags_HasGamepad;
 
     // If ImGui changed its mind about wanting text input, we need to tell SDL
-    if (io.WantTextInput != bd->OldWantTextInput) {
-        bd->OldWantTextInput = io.WantTextInput;
+    ImGuiID focused = ImGui::GetFocusID();
+    bool changed_want = io.WantTextInput != bd->OldWantTextInput;
+    bool changed_focus = focused != bd->OldFocusID;
+    bool starting_text_input = false;
+    bool stopping_text_input = false;
+    if (changed_want) {
         if (io.WantTextInput)
-            SDL_StartTextInput();
+            starting_text_input = true;
         else
-            SDL_StopTextInput();
+            stopping_text_input = true;
     }
+    if (changed_focus) {
+        if (focused == 0)
+            stopping_text_input = true;
+        if (io.WantTextInput) // still want text input, after switching focus
+            starting_text_input = true;
+    }
+
+    if (stopping_text_input)
+        SDL_StopTextInput();
+    else if (starting_text_input) {
+        ImGuiInputTextState* state = ImGui::GetInputTextState(focused);
+        if (state) {
+#ifdef __WIIU__
+            SDL_WiiUSetSWKBDInitialText(state->TextA.Data);
+            if (state->Flags & ImGuiInputTextFlags_Password)
+                SDL_WiiUSetSWKBDPasswordMode(SDL_WIIU_SWKBD_PASSWORD_MODE_FADE);
+            else
+                SDL_WiiUSetSWKBDPasswordMode(SDL_WIIU_SWKBD_PASSWORD_MODE_SHOW);
+#endif
+            SDL_StartTextInput();
+        }
+    }
+
+    bd->OldWantTextInput = io.WantTextInput;
+    bd->OldFocusID = focused;
 }
 
 //-----------------------------------------------------------------------------
