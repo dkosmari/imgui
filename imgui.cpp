@@ -3932,7 +3932,7 @@ void ImGui::RenderMouseCursor(ImVec2 base_pos, float base_scale, ImGuiMouseCurso
     ImGuiContext& g = *GImGui;
     if (mouse_cursor <= ImGuiMouseCursor_None || mouse_cursor >= ImGuiMouseCursor_COUNT) // We intentionally accept out of bound values.
         mouse_cursor = ImGuiMouseCursor_Arrow;
-    ImFontAtlas* font_atlas = g.DrawListSharedData.Font->ContainerAtlas;
+    ImFontAtlas* font_atlas = g.DrawListSharedData.FontAtlas; 
     for (ImGuiViewportP* viewport : g.Viewports)
     {
         // We scale cursor with current viewport/monitor, however Windows 10 for its own hardware cursor seems to be using a different scale factor.
@@ -4475,12 +4475,15 @@ static void SetCurrentWindow(ImGuiWindow* window)
     g.CurrentDpiScale = 1.0f; // FIXME-DPI: WIP this is modified in docking
     if (window)
     {
+        bool backup_skip_items = window->SkipItems;
+        window->SkipItems = false;
         if (g.IO.BackendFlags & ImGuiBackendFlags_RendererHasTextures)
         {
             ImGuiViewport* viewport = window->Viewport;
             g.FontRasterizerDensity = (viewport->FramebufferScale.x != 0.0f) ? viewport->FramebufferScale.x : g.IO.DisplayFramebufferScale.x; // == SetFontRasterizerDensity()
         }
         ImGui::UpdateCurrentFontSize(0.0f);
+        window->SkipItems = backup_skip_items;
         ImGui::NavUpdateCurrentWindowIsScrollPushableX();
     }
 }
@@ -6609,9 +6612,9 @@ static ImVec2 CalcWindowAutoFitSize(ImGuiWindow* window, const ImVec2& size_cont
         // FIXME: CalcWindowAutoFitSize() doesn't take into account that only one axis may be auto-fit when calculating scrollbars,
         // we may need to compute/store three variants of size_auto_fit, for x/y/xy.
         // Here we implement a workaround for child windows only, but a full solution would apply to normal windows as well:
-        if ((window->ChildFlags & ImGuiChildFlags_ResizeX) && !(window->ChildFlags & ImGuiChildFlags_ResizeY))
+        if ((window->ChildFlags & ImGuiChildFlags_ResizeX) && !(window->ChildFlags & (ImGuiChildFlags_ResizeY | ImGuiChildFlags_AutoResizeY)))
             size_auto_fit.y = window->SizeFull.y;
-        else if (!(window->ChildFlags & ImGuiChildFlags_ResizeX) && (window->ChildFlags & ImGuiChildFlags_ResizeY))
+        else if ((window->ChildFlags & ImGuiChildFlags_ResizeY) && !(window->ChildFlags & (ImGuiChildFlags_ResizeX | ImGuiChildFlags_AutoResizeX)))
             size_auto_fit.x = window->SizeFull.x;
 
         // When the window cannot fit all contents (either because of constraints, either because screen is too small),
@@ -6731,7 +6734,9 @@ static int ImGui::UpdateWindowManualResize(ImGuiWindow* window, const ImVec2& si
     ImGuiContext& g = *GImGui;
     ImGuiWindowFlags flags = window->Flags;
 
-    if ((flags & ImGuiWindowFlags_NoResize) || (flags & ImGuiWindowFlags_AlwaysAutoResize) || window->AutoFitFramesX > 0 || window->AutoFitFramesY > 0)
+    if ((flags & ImGuiWindowFlags_NoResize) || window->AutoFitFramesX > 0 || window->AutoFitFramesY > 0)
+        return false;
+    if ((flags & ImGuiWindowFlags_AlwaysAutoResize) && (window->ChildFlags & (ImGuiChildFlags_ResizeX | ImGuiChildFlags_ResizeY)) == 0)
         return false;
     if (window->WasActive == false) // Early out to avoid running this code for e.g. a hidden implicit/fallback Debug window.
         return false;
@@ -7123,8 +7128,12 @@ void ImGui::RenderWindowTitleBarContents(ImGuiWindow* window, const ImRect& titl
 
     // Close button
     if (has_close_button)
+    {
+        g.CurrentItemFlags |= ImGuiItemFlags_NoFocus;
         if (CloseButton(window->GetID("#CLOSE"), close_button_pos))
             *p_open = false;
+        g.CurrentItemFlags &= ~ImGuiItemFlags_NoFocus;
+    }
 
     window->DC.NavLayerCurrent = ImGuiNavLayer_Main;
     g.CurrentItemFlags = item_flags_backup;
@@ -8695,6 +8704,21 @@ bool ImGui::IsRectVisible(const ImVec2& rect_min, const ImVec2& rect_max)
 // Most of the relevant font logic is in imgui_draw.cpp.
 // Those are high-level support functions.
 //-----------------------------------------------------------------------------
+// - UpdateFontsNewFrame() [Internal]
+// - UpdateFontsEndFrame() [Internal]
+// - GetDefaultFont() [Internal]
+// - RegisterUserTexture() [Internal]
+// - UnregisterUserTexture() [Internal]
+// - RegisterFontAtlas() [Internal]
+// - UnregisterFontAtlas() [Internal]
+// - SetCurrentFont() [Internal]
+// - UpdateCurrentFontSize() [Internal]
+// - SetFontRasterizerDensity() [Internal]
+// - PushFont()
+// - PopFont()
+// - PushFontSize()
+// - PopFontSize()
+//-----------------------------------------------------------------------------
 
 void ImGui::UpdateFontsNewFrame()
 {
@@ -8791,10 +8815,12 @@ void ImGui::SetCurrentFont(ImFont* font, float font_size_before_scaling, float f
 #ifndef IMGUI_DISABLE_OBSOLETE_FUNCTIONS
         IM_ASSERT(font->Scale > 0.0f);
 #endif
-        g.DrawListSharedData.Font = g.Font;
-        ImFontAtlasUpdateDrawListsSharedData(g.Font->ContainerAtlas);
+        ImFontAtlas* atlas = font->ContainerAtlas;
+        g.DrawListSharedData.FontAtlas = atlas;
+        g.DrawListSharedData.Font = font;
+        ImFontAtlasUpdateDrawListsSharedData(atlas);
         if (g.CurrentWindow != NULL)
-            g.CurrentWindow->DrawList->_SetTexture(font->ContainerAtlas->TexRef);
+            g.CurrentWindow->DrawList->_SetTexture(atlas->TexRef);
     }
 }
 
@@ -8807,12 +8833,10 @@ void ImGui::UpdateCurrentFontSize(float restore_font_size_after_scaling)
 
     // Early out to avoid hidden window keeping bakes referenced and out of GC reach.
     // However this would leave a pretty subtle and damning error surface area if g.FontBaked was mismatching, so for now we null it.
+    // FIXME: perhaps g.FontSize should be updated?
     if (window != NULL && window->SkipItems)
         if (g.CurrentTable == NULL || g.CurrentTable->CurrentColumn != -1) // See 8465#issuecomment-2951509561. Ideally the SkipItems=true in tables would be amended with extra data.
-        {
-            g.FontBaked = NULL;
             return;
-        }
 
     // Restoring is pretty much only used by PopFont()/PopFontSize()
     float final_size = (restore_font_size_after_scaling > 0.0f) ? restore_font_size_after_scaling : 0.0f;
