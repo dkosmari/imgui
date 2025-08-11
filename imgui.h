@@ -2182,7 +2182,7 @@ struct ImVector
     inline ImVector()                                       { Size = Capacity = 0; Data = NULL; }
     inline ImVector(const ImVector<T>& src)                 { Size = Capacity = 0; Data = NULL; operator=(src); }
     inline ImVector(ImVector<T>&& src)
-    noexcept
+        noexcept
     {
         Size = src.Size;
         Capacity = src.Capacity;
@@ -2191,8 +2191,16 @@ struct ImVector
         src.Capacity = 0;
         src.Data = nullptr;
     }
-
-    inline ImVector<T>& operator=(const ImVector<T>& src)   { clear(); resize(src.Size); if (Data && src.Data) memcpy(Data, src.Data, (size_t)Size * sizeof(T)); return *this; }
+    inline ImVector<T>& operator=(const ImVector<T>& src)
+    {
+        if (this != &src) {
+            clear();
+            resize(src.Size);
+            if (Data && src.Data)
+                memcpy(Data, src.Data, (size_t)Size * sizeof(T));
+        }
+        return *this;
+    }
     inline ImVector<T>& operator=(ImVector<T>&& src)
         noexcept
     {
