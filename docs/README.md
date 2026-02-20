@@ -5,7 +5,7 @@ Dear ImGui
 
 ----
 
-[![Build Status](https://github.com/ocornut/imgui/workflows/build/badge.svg)](https://github.com/ocornut/imgui/actions?workflow=build) [![Static Analysis Status](https://github.com/ocornut/imgui/workflows/static-analysis/badge.svg)](https://github.com/ocornut/imgui/actions?workflow=static-analysis) [![Tests Status](https://github.com/ocornut/imgui_test_engine/workflows/tests/badge.svg)](https://github.com/ocornut/imgui_test_engine/actions?workflow=tests)
+[![Build Status](https://github.com/dkosmari/imgui/workflows/build/badge.svg)](https://github.com/dkosmari/imgui/actions?workflow=build) [![Static Analysis Status](https://github.com/dkosmari/imgui/workflows/static-analysis/badge.svg)](https://github.com/dkosmari/imgui/actions?workflow=static-analysis)
 
 <sub>(This library is available under a free and permissive license, but needs financial support to sustain its continued improvements. In addition to maintenance and stability there are many desirable features yet to be added. If your company is using Dear ImGui, please consider reaching out.)</sub>
 
@@ -109,7 +109,7 @@ Reading the changelogs is a good way to keep up to date with the things Dear ImG
 
 ### Demo
 
-Calling the `ImGui::ShowDemoWindow()` function will create a demo window showcasing a variety of features and examples. The code is always available for reference in `imgui_demo.cpp`. 
+Calling the `ImGui::ShowDemoWindow()` function will create a demo window showcasing a variety of features and examples. The code is always available for reference in `imgui_demo.cpp`.
 - [Web version of the demo](https://pthom.github.io/imgui_manual_online/manual/imgui_manual.html) courtesy of [@pthom](https://github.com/pthom).
 - [Screenshot of the demo](https://raw.githubusercontent.com/wiki/ocornut/imgui/web/v167/v167-misc.png).
 
