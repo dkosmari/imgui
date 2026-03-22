@@ -1632,6 +1632,7 @@ ImGuiIO::ImGuiIO()
     MouseDragThreshold = 6.0f;
     KeyRepeatDelay = 0.275f;
     KeyRepeatRate = 0.050f;
+    DragScrollButton = ImGuiMouseButton_Left;
 
     // Platform Functions
     // Note: Initialize() will setup default clipboard/ime handlers.
@@ -4137,6 +4138,8 @@ ImGuiContext::ImGuiContext(ImFontAtlas* shared_font_atlas)
     WheelingWindow = NULL;
     WheelingWindowStartFrame = WheelingWindowScrolledFrame = -1;
     WheelingWindowReleaseTimer = 0.0f;
+    DragScrollWindow = NULL;
+    DragScrollOldValue = ImVec2(0.0f, 0.0f);
 
     DebugDrawIdConflictsId = 0;
     DebugHookIdInfoId = 0;
@@ -4166,6 +4169,7 @@ ImGuiContext::ImGuiContext(ImFontAtlas* shared_font_atlas)
     memset(&ActiveIdValueOnActivation, 0, sizeof(ActiveIdValueOnActivation));
     LastActiveId = 0;
     LastActiveIdTimer = 0.0f;
+    DragAction = false;
 
     LastKeyboardKeyPressTime = LastKeyModsChangeTime = LastKeyModsChangeFromNoneTime = -1.0;
 
@@ -5545,6 +5549,7 @@ void ImGui::NewFrame()
     if (g.DeactivatedItemData.ElapseFrame < g.FrameCount)
         g.DeactivatedItemData.ID = 0;
     g.DeactivatedItemData.IsAlive = false;
+    g.DragAction = false;
 
     // Record when we have been stationary as this state is preserved while over same item.
     // FIXME: The way this is expressed means user cannot alter HoverStationaryDelay during the frame to use varying values.
@@ -6312,6 +6317,97 @@ void ImGui::SetActiveIdUsingAllKeyboardKeys()
     NavMoveRequestCancel();
 }
 
+void ImGui::DragScrollHandleMousePosEvent(const ImGuiInputEventMousePos& /*event*/)
+{
+    ImGuiContext& g = *GImGui;
+
+    // If the mouse button isn't down, cancel drag scroll.
+    if (!IsMouseDown(g.IO.DragScrollButton))
+        g.DragScrollWindow = NULL;
+
+    // If a widget is using drag-like interaction, cancel drag scroll.
+    if (g.DragAction)
+        g.DragScrollWindow = NULL;
+
+    // If a window is being moved, cancel drag scroll.
+    if (g.MovingWindow)
+        g.DragScrollWindow = NULL;
+
+    // If performing drag-and-drop, cancel drag scroll.
+    if (ImGui::IsDragDropActive())
+        g.DragScrollWindow = NULL;
+
+    // Bail out if there's no window to scroll.
+    if (!g.DragScrollWindow)
+        return;
+
+    // Don't do anything until a drag is detected.
+    if (!IsMouseDragging(g.IO.DragScrollButton))
+        return;
+
+    ClearActiveID();
+    ImVec2 delta = GetMouseDragDelta(g.IO.DragScrollButton);
+    SetScrollX(g.DragScrollWindow, g.DragScrollOldValue.x - delta.x);
+    SetScrollY(g.DragScrollWindow, g.DragScrollOldValue.y - delta.y);
+}
+
+static ImGuiWindow* FindWindowByPoint(ImVec2 pos)
+{
+    ImGuiContext& g = *GImGui;
+
+    for (int i = g.Windows.Size - 1; i >= 0; --i) {
+        ImGuiWindow* win = g.Windows[i];
+        if (win != g.HoveredWindow)
+            continue;
+        if (win->InnerRect.Contains(pos))
+            return win;
+    }
+    return NULL;
+}
+
+// Walk up the window hierarchy (up to a root window) until a scrollable window is found.
+static ImGuiWindow* FindScrollableWindow(ImGuiWindow* win)
+{
+    while (win) {
+        if (win->ScrollMax.x > 0 || win->ScrollMax.y > 0) {
+            break;
+        }
+        // If win is a root window, and still not scrollable, give up.
+        if (win->RootWindow == win)
+            return NULL;
+        win = win->ParentWindow;
+    }
+    return win;
+}
+
+void ImGui::DragScrollHandleMouseButtonEvent(const ImGuiInputEventMouseButton& event)
+{
+    // Bail out if we don't have valid mouse coordinates.
+    if (!IsMousePosValid(NULL))
+        return;
+    ImGuiContext& g = *GImGui;
+    if (event.Button == g.IO.DragScrollButton) {
+        if (event.Down) {
+            // Button press.
+
+            // Bail out if in the middle of a drag action.
+            if (g.DragAction)
+                return;
+
+            ImGuiWindow* pointed_window = FindWindowByPoint(GetMousePos());
+            g.DragScrollWindow = FindScrollableWindow(pointed_window);
+
+            // Save original scroll value.
+            if (g.DragScrollWindow)
+                g.DragScrollOldValue = g.DragScrollWindow->Scroll;
+        } else {
+            // Button release.
+            g.DragScrollWindow = NULL;
+            g.DragScrollOldValue = ImVec2(0.0f, 0.0f);
+        }
+    }
+}
+
 ImGuiID ImGui::GetItemID()
 {
     ImGuiContext& g = *GImGui;
@@ -6901,6 +6997,7 @@ static int ImGui::UpdateWindowManualResize(ImGuiWindow* window, int* border_hove
             ImVec2 corner_target = g.IO.MousePos - g.ActiveIdClickOffset + ImLerp(def.InnerDir * grip_hover_outer_size, def.InnerDir * -grip_hover_inner_size, def.CornerPosN); // Corner of the window corresponding to our corner grip
             corner_target = ImClamp(corner_target, clamp_min, clamp_max);
             CalcResizePosSizeFromAnyCorner(window, corner_target, def.CornerPosN, &pos_target, &size_target);
+            g.DragAction = true;
         }
 
         // Only lower-left grip is visible before hovering/activating
@@ -6980,8 +7077,10 @@ static int ImGui::UpdateWindowManualResize(ImGuiWindow* window, int* border_hove
             ImVec2 clamp_min(border_n == ImGuiDir_Right ? clamp_rect.Min.x : -FLT_MAX, border_n == ImGuiDir_Down || (border_n == ImGuiDir_Up && window_move_from_title_bar) ? clamp_rect.Min.y : -FLT_MAX);
             ImVec2 clamp_max(border_n == ImGuiDir_Left ? clamp_rect.Max.x : +FLT_MAX, border_n == ImGuiDir_Up ? clamp_rect.Max.y : +FLT_MAX);
             border_target = ImClamp(border_target, clamp_min, clamp_max);
-            if (!ignore_resize)
+            if (!ignore_resize) {
                 CalcResizePosSizeFromAnyCorner(window, border_target, ImMin(def.SegmentN1, def.SegmentN2), &pos_target, &size_target);
+                g.DragAction = true;
+            }
         }
         if (hovered)
             *border_hovered = border_n;
@@ -10403,6 +10502,8 @@ void ImGui::UpdateInputEvents(bool trickle_fast_inputs)
             io.MousePos = event_pos;
             io.MouseSource = e->MousePos.MouseSource;
             mouse_moved = true;
+            if (g.IO.ConfigFlags & ImGuiConfigFlags_DragScroll)
+                DragScrollHandleMousePosEvent(e->MousePos);
         }
         else if (e->Type == ImGuiInputEventType_MouseButton)
         {
@@ -10416,6 +10517,8 @@ void ImGui::UpdateInputEvents(bool trickle_fast_inputs)
             io.MouseDown[button] = e->MouseButton.Down;
             io.MouseSource = e->MouseButton.MouseSource;
             mouse_button_changed |= (1 << button);
+            if (g.IO.ConfigFlags & ImGuiConfigFlags_DragScroll)
+                DragScrollHandleMouseButtonEvent(e->MouseButton);
         }
         else if (e->Type == ImGuiInputEventType_MouseWheel)
         {
