@@ -2241,6 +2241,8 @@ struct ImGuiContext
     ImVec2                  WheelingAxisAvg;
     ImGuiWindow*            DragScrollWindow;                   // Track which window is the target of a drag scroll.
     ImVec2                  DragScrollOldValue;                 // Store original scroll value before a drag scroll starts.
+    ImVec2                  DragScrollVelocity;
+    bool                    DragScrollIsGliding;
 
     // Item/widgets state and tracking information
     ImGuiID                 DebugDrawIdConflictsId;             // Set when we detect multiple items with the same identifier
@@ -3401,8 +3403,7 @@ namespace ImGui
     IMGUI_API void          SetActiveIdUsingAllKeyboardKeys();
     inline bool             IsActiveIdUsingNavDir(ImGuiDir dir)                         { ImGuiContext& g = *GImGui; return (g.ActiveIdUsingNavDirMask & (1 << dir)) != 0; }
 
-    IMGUI_API void          DragScrollHandleMousePosEvent(const ImGuiInputEventMousePos& event);
-    IMGUI_API void          DragScrollHandleMouseButtonEvent(const ImGuiInputEventMouseButton& event);
+    IMGUI_API void          HandleDragScroll();
 
     // [EXPERIMENTAL] Low-Level: Key/Input Ownership
     // - The idea is that instead of "eating" a given input, we can link to an owner id.

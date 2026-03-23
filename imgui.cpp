@@ -1633,6 +1633,8 @@ ImGuiIO::ImGuiIO()
     KeyRepeatDelay = 0.275f;
     KeyRepeatRate = 0.050f;
     DragScrollButton = ImGuiMouseButton_Left;
+    DragScrollDecel = 5000.0f; //
+    DragScrollMinSpeed = 300.0f;
 
     // Platform Functions
     // Note: Initialize() will setup default clipboard/ime handlers.
@@ -4140,6 +4142,7 @@ ImGuiContext::ImGuiContext(ImFontAtlas* shared_font_atlas)
     WheelingWindowReleaseTimer = 0.0f;
     DragScrollWindow = NULL;
     DragScrollOldValue = ImVec2(0.0f, 0.0f);
+    DragScrollVelocity = ImVec2(0.0f, 0.0f);
 
     DebugDrawIdConflictsId = 0;
     DebugHookIdInfoId = 0;
@@ -6012,6 +6015,8 @@ void ImGui::EndFrame()
     for (ImFontAtlas* atlas : g.FontAtlases)
         atlas->Locked = false;
 
+    HandleDragScroll();
+
     // Clear Input data for next frame
     g.IO.MousePosPrev = g.IO.MousePos;
     g.IO.AppFocusLost = false;
@@ -6317,47 +6322,13 @@ void ImGui::SetActiveIdUsingAllKeyboardKeys()
     NavMoveRequestCancel();
 }
 
-void ImGui::DragScrollHandleMousePosEvent(const ImGuiInputEventMousePos& /*event*/)
-{
-    ImGuiContext& g = *GImGui;
-
-    // If the mouse button isn't down, cancel drag scroll.
-    if (!IsMouseDown(g.IO.DragScrollButton))
-        g.DragScrollWindow = NULL;
-
-    // If a widget is using drag-like interaction, cancel drag scroll.
-    if (g.DragAction)
-        g.DragScrollWindow = NULL;
-
-    // If a window is being moved, cancel drag scroll.
-    if (g.MovingWindow)
-        g.DragScrollWindow = NULL;
-
-    // If performing drag-and-drop, cancel drag scroll.
-    if (ImGui::IsDragDropActive())
-        g.DragScrollWindow = NULL;
-
-    // Bail out if there's no window to scroll.
-    if (!g.DragScrollWindow)
-        return;
-
-    // Don't do anything until a drag is detected.
-    if (!IsMouseDragging(g.IO.DragScrollButton))
-        return;
-
-    ClearActiveID();
-    ImVec2 delta = GetMouseDragDelta(g.IO.DragScrollButton);
-    SetScrollX(g.DragScrollWindow, g.DragScrollOldValue.x - delta.x);
-    SetScrollY(g.DragScrollWindow, g.DragScrollOldValue.y - delta.y);
-}
-
 static ImGuiWindow* FindWindowByPoint(ImVec2 pos)
 {
     ImGuiContext& g = *GImGui;
 
     for (int i = g.Windows.Size - 1; i >= 0; --i) {
         ImGuiWindow* win = g.Windows[i];
-        if (win != g.HoveredWindow)
+        if (!IsWindowActiveAndVisible(win))
             continue;
         if (win->InnerRect.Contains(pos))
             return win;
@@ -6369,9 +6340,8 @@ static ImGuiWindow* FindWindowByPoint(ImVec2 pos)
 static ImGuiWindow* FindScrollableWindow(ImGuiWindow* win)
 {
     while (win) {
-        if (win->ScrollMax.x > 0 || win->ScrollMax.y > 0) {
+        if (win->ScrollMax.x > 0 || win->ScrollMax.y > 0)
             break;
-        }
         // If win is a root window, and still not scrollable, give up.
         if (win->RootWindow == win)
             return NULL;
@@ -6380,30 +6350,114 @@ static ImGuiWindow* FindScrollableWindow(ImGuiWindow* win)
     return win;
 }
 
-void ImGui::DragScrollHandleMouseButtonEvent(const ImGuiInputEventMouseButton& event)
+void ImGui::HandleDragScroll()
 {
-    // Bail out if we don't have valid mouse coordinates.
-    if (!IsMousePosValid(NULL))
-        return;
     ImGuiContext& g = *GImGui;
-    if (event.Button == g.IO.DragScrollButton) {
-        if (event.Down) {
-            // Button press.
+    ImGuiIO& io = g.IO;
 
-            // Bail out if in the middle of a drag action.
-            if (g.DragAction)
+    // Bail out if DragScroll is disabled.
+    if (!(io.ConfigFlags & ImGuiConfigFlags_DragScroll))
+        return;
+
+    // Bail out if a widget is performing a drag action.
+    if (g.DragAction) {
+        g.DragScrollWindow = NULL;
+        return;
+    }
+
+    // Bail out if a drag-and-drop operation is ongoing.
+    if (IsDragDropActive()) {
+        g.DragScrollWindow = NULL;
+        return;
+    }
+
+    // Bail out if moving a window.
+    if (g.MovingWindow) {
+        g.DragScrollWindow = NULL;
+        return;
+    }
+
+    // Forget DragScrollWindow if it was garbage-collected.
+    if (g.DragScrollWindow && g.DragScrollWindow->MemoryCompacted)
+        g.DragScrollWindow = NULL;
+
+    if (IsMouseDown(io.DragScrollButton)) {
+        // Button is down.
+
+        // Never allow gliding while the drag scroll button is down.
+        g.DragScrollIsGliding = false;
+
+        if (IsMouseClicked(io.DragScrollButton)) {
+            // Just clicked.
+
+            ImVec2 clicked_pos = io.MouseClickedPos[io.DragScrollButton];
+
+            // Bail out if clicked position is not valid.
+            if (!IsMousePosValid(&clicked_pos))
                 return;
 
-            ImGuiWindow* pointed_window = FindWindowByPoint(GetMousePos());
+            ImGuiWindow* pointed_window = FindWindowByPoint(clicked_pos);
             g.DragScrollWindow = FindScrollableWindow(pointed_window);
-
             // Save original scroll value.
             if (g.DragScrollWindow)
                 g.DragScrollOldValue = g.DragScrollWindow->Scroll;
-        } else {
-            // Button release.
-            g.DragScrollWindow = NULL;
-            g.DragScrollOldValue = ImVec2(0.0f, 0.0f);
+        }
+
+        // Bail out if there's no window to scroll.
+        if (!g.DragScrollWindow)
+            return;
+
+        // Remember velocity for when the button is released.
+        g.DragScrollVelocity = - io.MouseDelta / io.DeltaTime;
+
+        // Bail out if not (yet) in a dragging state.
+        if (!IsMouseDragging(io.DragScrollButton))
+            return;
+
+        // Perform drag scroll.
+        ImVec2 drag_delta = GetMouseDragDelta(io.DragScrollButton);
+        SetScrollX(g.DragScrollWindow, g.DragScrollOldValue.x - drag_delta.x);
+        SetScrollY(g.DragScrollWindow, g.DragScrollOldValue.y - drag_delta.y);
+
+        // Ensure no widget is active, to avoid activating buttons, menus,etc.
+        ClearActiveID();
+    } else {
+        // Button is not down.
+
+        // Bail out if no window to scroll.
+        if (!g.DragScrollWindow)
+            return;
+
+        const float min_speed_2 = g.IO.DragScrollMinSpeed * g.IO.DragScrollMinSpeed;
+        ImVec2& vel = g.DragScrollVelocity;
+
+        // Check if speed high is enough to keep gliding.
+        g.DragScrollIsGliding = ImLengthSqr(g.DragScrollVelocity) > min_speed_2;
+
+        // Perform kinetic scrolling if gliding.
+        if (g.DragScrollIsGliding) {
+            ImVec2 old_pos = g.DragScrollWindow->Scroll;
+            ImVec2 new_pos = old_pos + g.IO.DeltaTime * vel;
+            SetScrollX(g.DragScrollWindow, new_pos.x);
+            SetScrollY(g.DragScrollWindow, new_pos.y);
+
+            // Decelerate scroll velocity.
+            const float dv = g.IO.DragScrollDecel * g.IO.DeltaTime;
+            if (dv > ImAbs(vel.x))
+                vel.x = 0.0f;
+            else
+                vel.x -= ImSign(vel.x) * dv;
+            if (dv > ImAbs(vel.y))
+                vel.y = 0.0f;
+            else
+                vel.y -= ImSign(vel.y) * dv;
+
+            // Cancel velocity when hitting a scroll boundary.
+            ImVec2 max = g.DragScrollWindow->ScrollMax;
+            if ((new_pos.x <= 0 && vel.x < 0) || (new_pos.x >= max.x && vel.x > 0))
+                vel.x = 0;
+            if ((new_pos.y <= 0 && vel.y < 0) || (new_pos.y >= max.y && vel.y > 0))
+                vel.y = 0;
         }
     }
 }
@@ -10502,8 +10556,6 @@ void ImGui::UpdateInputEvents(bool trickle_fast_inputs)
             io.MousePos = event_pos;
             io.MouseSource = e->MousePos.MouseSource;
             mouse_moved = true;
-            if (g.IO.ConfigFlags & ImGuiConfigFlags_DragScroll)
-                DragScrollHandleMousePosEvent(e->MousePos);
         }
         else if (e->Type == ImGuiInputEventType_MouseButton)
         {
@@ -10517,8 +10569,6 @@ void ImGui::UpdateInputEvents(bool trickle_fast_inputs)
             io.MouseDown[button] = e->MouseButton.Down;
             io.MouseSource = e->MouseButton.MouseSource;
             mouse_button_changed |= (1 << button);
-            if (g.IO.ConfigFlags & ImGuiConfigFlags_DragScroll)
-                DragScrollHandleMouseButtonEvent(e->MouseButton);
         }
         else if (e->Type == ImGuiInputEventType_MouseWheel)
         {
