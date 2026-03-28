@@ -6359,8 +6359,10 @@ void ImGui::HandleDragScroll()
     ImGuiIO& io = g.IO;
 
     // Bail out if DragScroll is disabled.
-    if (!io.ConfigDragScroll)
+    if (!io.ConfigDragScroll) {
+        g.DragScrollWindow = NULL;
         return;
+    }
 
     // Bail out if a widget is performing a drag action.
     if (g.DragAction) {
