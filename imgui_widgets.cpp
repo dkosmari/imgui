@@ -1086,6 +1086,8 @@ bool ImGui::ScrollbarEx(const ImRect& bb_frame, ImGuiID id, ImGuiAxis axis, ImS6
         // Update distance to grab now that we have seek'ed and saturated
         //if (seek_absolute)
         //    g.ScrollbarClickDeltaToGrabCenter = clicked_v_norm - grab_v_norm - grab_h_norm * 0.5f;
+
+        g.DragAction = true;
     }
 
     // Render
