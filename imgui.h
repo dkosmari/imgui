@@ -1708,7 +1708,6 @@ enum ImGuiConfigFlags_
     ImGuiConfigFlags_NoMouse                = 1 << 4,   // Instruct dear imgui to disable mouse inputs and interactions.
     ImGuiConfigFlags_NoMouseCursorChange    = 1 << 5,   // Instruct backend to not alter mouse cursor shape and visibility. Use if the backend cursor changes are interfering with yours and you don't want to use SetMouseCursor() to change mouse cursor. You may want to honor requests from imgui by reading GetMouseCursor() yourself instead.
     ImGuiConfigFlags_NoKeyboard             = 1 << 6,   // Instruct dear imgui to disable keyboard inputs and interactions. This is done by ignoring keyboard events and clearing existing states.
-    ImGuiConfigFlags_DragScroll             = 1 << 7,   // Enable scrolling by dragging with the mouse.
 
     // User storage (to allow your backend/engine to communicate to code that may be shared between multiple projects. Those flags are NOT used by core Dear ImGui)
     ImGuiConfigFlags_IsSRGB                 = 1 << 20,  // Application is SRGB-aware.
@@ -2474,6 +2473,9 @@ struct ImGuiIO
     float       MouseDragThreshold;             // = 6.0f           // Distance threshold before considering we are dragging.
     float       KeyRepeatDelay;                 // = 0.275f         // When holding a key/button, time before it starts repeating, in seconds (for buttons in Repeat mode, etc.).
     float       KeyRepeatRate;                  // = 0.050f         // When holding a key/button, rate at which it repeats, in seconds.
+
+    // Drag scrolling behavior.
+    bool        ConfigDragScroll;               // = false          // Dragging with a mouse button will scroll the content.
     ImGuiMouseButton DragScrollButton;          // ImGuiMouseButton_Left // What mouse button is used to detect drag scrolling. See ImGuiConfigFlags_DragScroll.
     float       DragScrollDecel;                // = 5000.0f        // How much of the scroll speed decelerates, in pixels per second.
     float       DragScrollMinSpeed;             // = 300.0f         // Minimum kinetic scroll speed, in pixels per second, before the scroll is stopped.

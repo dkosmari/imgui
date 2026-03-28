@@ -1632,8 +1632,11 @@ ImGuiIO::ImGuiIO()
     MouseDragThreshold = 6.0f;
     KeyRepeatDelay = 0.275f;
     KeyRepeatRate = 0.050f;
+
+    // Drag scroll options
+    ConfigDragScroll = false;
     DragScrollButton = ImGuiMouseButton_Left;
-    DragScrollDecel = 5000.0f; //
+    DragScrollDecel = 5000.0f;
     DragScrollMinSpeed = 300.0f;
 
     // Platform Functions
@@ -6322,7 +6325,7 @@ void ImGui::SetActiveIdUsingAllKeyboardKeys()
     NavMoveRequestCancel();
 }
 
-static ImGuiWindow* FindWindowByPoint(ImVec2 pos)
+static ImGuiWindow* FindActiveWindowByPoint(ImVec2 pos)
 {
     ImGuiContext& g = *GImGui;
 
@@ -6356,7 +6359,7 @@ void ImGui::HandleDragScroll()
     ImGuiIO& io = g.IO;
 
     // Bail out if DragScroll is disabled.
-    if (!(io.ConfigFlags & ImGuiConfigFlags_DragScroll))
+    if (!io.ConfigDragScroll)
         return;
 
     // Bail out if a widget is performing a drag action.
@@ -6371,7 +6374,7 @@ void ImGui::HandleDragScroll()
         return;
     }
 
-    // Bail out if moving a window.
+    // Bail out if a window is being moved.
     if (g.MovingWindow) {
         g.DragScrollWindow = NULL;
         return;
@@ -6380,6 +6383,18 @@ void ImGui::HandleDragScroll()
     // Forget DragScrollWindow if it was garbage-collected.
     if (g.DragScrollWindow && g.DragScrollWindow->MemoryCompacted)
         g.DragScrollWindow = NULL;
+
+    // Bail out if DragScrollWindow is movable from dragging its content.
+    if (g.DragScrollWindow && (g.DragScrollWindow->BgClickFlags & ImGuiWindowBgClickFlags_Move)) {
+        g.DragScrollWindow = NULL;
+        return;
+    }
+
+    // Bail out if window is not hoverable, like when there's a modal on top.
+    if (g.DragScrollWindow && !IsWindowContentHoverable(g.DragScrollWindow)) {
+        g.DragScrollWindow = NULL;
+        return;
+    }
 
     if (IsMouseDown(io.DragScrollButton)) {
         // Button is down.
@@ -6396,7 +6411,7 @@ void ImGui::HandleDragScroll()
             if (!IsMousePosValid(&clicked_pos))
                 return;
 
-            ImGuiWindow* pointed_window = FindWindowByPoint(clicked_pos);
+            ImGuiWindow* pointed_window = FindActiveWindowByPoint(clicked_pos);
             g.DragScrollWindow = FindScrollableWindow(pointed_window);
             // Save original scroll value.
             if (g.DragScrollWindow)

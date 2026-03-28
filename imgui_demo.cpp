@@ -490,16 +490,6 @@ void ImGui::ShowDemoWindow(bool* p_open)
             ImGui::SameLine(); HelpMarker("Enable input queue trickling: some types of events submitted during the same frame (e.g. button down + up) will be spread over multiple frames, improving interactions with low framerates.");
             ImGui::Checkbox("io.MouseDrawCursor", &io.MouseDrawCursor);
             ImGui::SameLine(); HelpMarker("Instruct Dear ImGui to render a mouse cursor itself. Note that a mouse cursor rendered via your application GPU rendering path will feel more laggy than hardware cursor, but will be more in sync with your other visuals.\n\nSome desktop applications may use both kinds of cursors (e.g. enable software cursor only when resizing/dragging something).");
-            ImGui::CheckboxFlags("io.ConfigFlags: DragScroll", &io.ConfigFlags, ImGuiConfigFlags_DragScroll);
-            ImGui::SameLine(); HelpMarker("Enable drag-to-scroll interactions.");
-            ImGui::PushItemWidth(-ImGui::GetContentRegionAvail().x * 0.5f);
-            ImGui::DragFloat("io.MouseDragThreshold", &io.MouseDragThreshold, 0.5f, 0.0f, 100.0f, "%.0f");
-            ImGui::SameLine(); HelpMarker("Distance threshold before considering we are dragging.");
-            ImGui::DragFloat("io.DragScrollDecel", &io.DragScrollDecel, 10.0f, 0.0f, 10000.0f, "%.0f");
-            ImGui::SameLine(); HelpMarker("How much of the scroll speed decelerates, in pixels per second.");
-            ImGui::DragFloat("io.DragScrollMinSpeed", &io.DragScrollMinSpeed, 1.0f, 0.0f, 1000.0f, "%.0f");
-            ImGui::SameLine(); HelpMarker("Minimum kinetic scroll speed, in pixels per second, before the scroll is stopped.");
-            ImGui::PopItemWidth();
 
             ImGui::SeparatorText("Keyboard/Gamepad Navigation");
             ImGui::Checkbox("io.ConfigNavSwapGamepadButtons", &io.ConfigNavSwapGamepadButtons);
@@ -551,6 +541,18 @@ void ImGui::ShowDemoWindow(bool* p_open)
             ImGui::Checkbox("io.ConfigErrorRecoveryEnableTooltip", &io.ConfigErrorRecoveryEnableTooltip);
             if (!io.ConfigErrorRecoveryEnableAssert && !io.ConfigErrorRecoveryEnableDebugLog && !io.ConfigErrorRecoveryEnableTooltip)
                 io.ConfigErrorRecoveryEnableAssert = io.ConfigErrorRecoveryEnableDebugLog = io.ConfigErrorRecoveryEnableTooltip = true;
+
+            ImGui::SeparatorText("Dragging and scrolling");
+            ImGui::Checkbox("io.ConfigDragScroll", &io.ConfigDragScroll);
+            ImGui::SameLine(); HelpMarker("Enable drag-to-scroll interactions.");
+            ImGui::PushItemWidth(-ImGui::GetContentRegionAvail().x * 0.5f);
+            ImGui::DragFloat("io.MouseDragThreshold", &io.MouseDragThreshold, 0.5f, 0.0f, 100.0f, "%.0f");
+            ImGui::SameLine(); HelpMarker("Distance threshold before considering we are dragging.");
+            ImGui::DragFloat("io.DragScrollDecel", &io.DragScrollDecel, 10.0f, 0.0f, 10000.0f, "%.0f");
+            ImGui::SameLine(); HelpMarker("How much of the scroll speed decelerates, in pixels per second.");
+            ImGui::DragFloat("io.DragScrollMinSpeed", &io.DragScrollMinSpeed, 1.0f, 0.0f, 1000.0f, "%.0f");
+            ImGui::SameLine(); HelpMarker("Minimum kinetic scroll speed, in pixels per second, before the scroll is stopped.");
+            ImGui::PopItemWidth();
 
             // Also read: https://github.com/ocornut/imgui/wiki/Debug-Tools
             ImGui::SeparatorText("Debug");
