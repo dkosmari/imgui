@@ -6329,7 +6329,8 @@ static ImGuiWindow* FindActiveWindowByPoint(ImVec2 pos)
 {
     ImGuiContext& g = *GImGui;
 
-    for (int i = g.Windows.Size - 1; i >= 0; --i) {
+    for (int i = g.Windows.Size - 1; i >= 0; --i)
+    {
         ImGuiWindow* win = g.Windows[i];
         if (!IsWindowActiveAndVisible(win))
             continue;
@@ -6342,7 +6343,8 @@ static ImGuiWindow* FindActiveWindowByPoint(ImVec2 pos)
 // Walk up the window hierarchy (up to a root window) until a scrollable window is found.
 static ImGuiWindow* FindScrollableWindow(ImGuiWindow* win)
 {
-    while (win) {
+    while (win)
+    {
         if (win->ScrollMax.x > 0 || win->ScrollMax.y > 0)
             break;
         // If win is a root window, and still not scrollable, give up.
@@ -6359,25 +6361,29 @@ void ImGui::HandleDragScroll()
     ImGuiIO& io = g.IO;
 
     // Bail out if DragScroll is disabled.
-    if (!io.ConfigDragScroll) {
+    if (!io.ConfigDragScroll)
+    {
         g.DragScrollWindow = NULL;
         return;
     }
 
     // Bail out if a widget is performing a drag action.
-    if (g.DragAction) {
+    if (g.DragAction)
+    {
         g.DragScrollWindow = NULL;
         return;
     }
 
     // Bail out if a drag-and-drop operation is ongoing.
-    if (IsDragDropActive()) {
+    if (IsDragDropActive())
+    {
         g.DragScrollWindow = NULL;
         return;
     }
 
     // Bail out if a window is being moved.
-    if (g.MovingWindow) {
+    if (g.MovingWindow)
+    {
         g.DragScrollWindow = NULL;
         return;
     }
@@ -6387,24 +6393,28 @@ void ImGui::HandleDragScroll()
         g.DragScrollWindow = NULL;
 
     // Bail out if DragScrollWindow is movable from dragging its content.
-    if (g.DragScrollWindow && (g.DragScrollWindow->BgClickFlags & ImGuiWindowBgClickFlags_Move)) {
+    if (g.DragScrollWindow && (g.DragScrollWindow->BgClickFlags & ImGuiWindowBgClickFlags_Move))
+    {
         g.DragScrollWindow = NULL;
         return;
     }
 
     // Bail out if window is not hoverable, like when there's a modal on top.
-    if (g.DragScrollWindow && !IsWindowContentHoverable(g.DragScrollWindow)) {
+    if (g.DragScrollWindow && !IsWindowContentHoverable(g.DragScrollWindow))
+    {
         g.DragScrollWindow = NULL;
         return;
     }
 
-    if (IsMouseDown(io.DragScrollButton)) {
+    if (IsMouseDown(io.DragScrollButton))
+    {
         // Button is down.
 
         // Never allow gliding while the drag scroll button is down.
         g.DragScrollIsGliding = false;
 
-        if (IsMouseClicked(io.DragScrollButton)) {
+        if (IsMouseClicked(io.DragScrollButton))
+        {
             // Just clicked.
 
             ImVec2 clicked_pos = io.MouseClickedPos[io.DragScrollButton];
@@ -6438,7 +6448,9 @@ void ImGui::HandleDragScroll()
 
         // Ensure no widget is active, to avoid activating buttons, menus,etc.
         ClearActiveID();
-    } else {
+    }
+    else
+    {
         // Button is not down.
 
         // Bail out if no window to scroll.
@@ -6452,7 +6464,8 @@ void ImGui::HandleDragScroll()
         g.DragScrollIsGliding = ImLengthSqr(g.DragScrollVelocity) > min_speed_2;
 
         // Perform kinetic scrolling if gliding.
-        if (g.DragScrollIsGliding) {
+        if (g.DragScrollIsGliding)
+        {
             ImVec2 old_pos = g.DragScrollWindow->Scroll;
             ImVec2 new_pos = old_pos + g.IO.DeltaTime * vel;
             SetScrollX(g.DragScrollWindow, new_pos.x);
@@ -6475,6 +6488,11 @@ void ImGui::HandleDragScroll()
                 vel.x = 0;
             if ((new_pos.y <= 0 && vel.y < 0) || (new_pos.y >= max.y && vel.y > 0))
                 vel.y = 0;
+
+            // When gliding, we invalidate mouse pos, we don't want any hover events.
+            g.IO.MousePos = g.IO.MousePosPrev = ImVec2(-FLT_MAX, -FLT_MAX);
+            g.IO.MouseDelta = ImVec2(0.0f, 0.0f);
+            ClearActiveID();
         }
     }
 }
@@ -9453,7 +9471,7 @@ IM_MSVC_RUNTIME_CHECKS_RESTORE
 // - IsMouseDragPastThreshold() [Internal]
 // - IsMouseDragging()
 // - GetMousePos()
-// - SetMousePos() [Internal]
+// - TeleportMousePos() [Internal]
 // - GetMousePosOnOpeningCurrentPopup()
 // - IsMousePosValid()
 // - IsAnyMouseDown()
