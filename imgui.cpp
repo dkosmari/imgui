@@ -6396,13 +6396,12 @@ void ImGui::HandleDragScroll()
         // Button is down.
 
         // Never allow gliding while the drag scroll button is down.
-        g.DragScrollIsGliding = false;
         g.DragScrollVelocity = ImVec2(0.0f, 0.0f);
 
         if (IsMouseClicked(io.DragScrollButton))
         {
             // Just clicked.
-            ImVec2 clicked_pos = io.MouseClickedPos[io.DragScrollButton];
+            const ImVec2 clicked_pos = io.MouseClickedPos[io.DragScrollButton];
 
             // Bail out if clicked position is not valid.
             if (!IsMousePosValid(&clicked_pos))
@@ -6446,31 +6445,31 @@ void ImGui::HandleDragScroll()
 
         const float min_speed_2 = io.DragScrollMinSpeed * io.DragScrollMinSpeed;
         ImVec2& vel = g.DragScrollVelocity;
+        const float speed_2 = ImLengthSqr(vel);
 
         // Check if speed high is enough to keep gliding.
-        g.DragScrollIsGliding = ImLengthSqr(vel) > min_speed_2;
+        const bool is_gliding = speed_2 > min_speed_2;
 
         // Perform kinetic scrolling if gliding.
-        if (g.DragScrollIsGliding)
+        if (is_gliding)
         {
-            ImVec2 old_pos = g.DragScrollWindow->Scroll;
-            ImVec2 new_pos = old_pos + io.DeltaTime * vel;
+            const ImVec2 old_pos = g.DragScrollWindow->Scroll;
+            const ImVec2 new_pos = old_pos + io.DeltaTime * vel;
             SetScrollX(g.DragScrollWindow, new_pos.x);
             SetScrollY(g.DragScrollWindow, new_pos.y);
 
             // Decelerate scroll velocity.
-            const float dv = io.DragScrollDecel * io.DeltaTime;
-            if (dv > ImAbs(vel.x))
-                vel.x = 0.0f;
+            // integrate deceleration over the delta time
+            const float decel_speed = io.DragScrollDecel * io.DeltaTime;
+            const float speed = ImSqrt(speed_2);
+            if (speed <= decel_speed)
+                vel = ImVec2(0.0f, 0.0f);
             else
-                vel.x -= ImSign(vel.x) * dv;
-            if (dv > ImAbs(vel.y))
-                vel.y = 0.0f;
-            else
-                vel.y -= ImSign(vel.y) * dv;
+                // deceleration velocity is always opposed to velocity (vel / speed == normalized(vel))
+                vel -= decel_speed / speed * vel;
 
             // Cancel velocity when hitting a scroll boundary.
-            ImVec2 max = g.DragScrollWindow->ScrollMax;
+            const ImVec2 max = g.DragScrollWindow->ScrollMax;
             if ((new_pos.x <= 0 && vel.x < 0) || (new_pos.x >= max.x && vel.x > 0))
                 vel.x = 0;
             if ((new_pos.y <= 0 && vel.y < 0) || (new_pos.y >= max.y && vel.y > 0))
