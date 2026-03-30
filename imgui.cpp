@@ -6325,21 +6325,6 @@ void ImGui::SetActiveIdUsingAllKeyboardKeys()
     NavMoveRequestCancel();
 }
 
-static ImGuiWindow* FindActiveWindowByPoint(ImVec2 pos)
-{
-    ImGuiContext& g = *GImGui;
-
-    for (int i = g.Windows.Size - 1; i >= 0; --i)
-    {
-        ImGuiWindow* win = g.Windows[i];
-        if (!IsWindowActiveAndVisible(win))
-            continue;
-        if (win->InnerRect.Contains(pos))
-            return win;
-    }
-    return NULL;
-}
-
 // Walk up the window hierarchy (up to a root window) until a scrollable window is found.
 static ImGuiWindow* FindScrollableWindow(ImGuiWindow* win)
 {
@@ -6412,18 +6397,20 @@ void ImGui::HandleDragScroll()
 
         // Never allow gliding while the drag scroll button is down.
         g.DragScrollIsGliding = false;
+        g.DragScrollVelocity = ImVec2(0.0f, 0.0f);
 
         if (IsMouseClicked(io.DragScrollButton))
         {
             // Just clicked.
-
             ImVec2 clicked_pos = io.MouseClickedPos[io.DragScrollButton];
 
             // Bail out if clicked position is not valid.
             if (!IsMousePosValid(&clicked_pos))
                 return;
 
-            ImGuiWindow* pointed_window = FindActiveWindowByPoint(clicked_pos);
+            ImGuiWindow* pointed_window = NULL;
+            FindHoveredWindowEx(clicked_pos, false, &pointed_window, NULL);
+
             g.DragScrollWindow = FindScrollableWindow(pointed_window);
             // Save original scroll value.
             if (g.DragScrollWindow)
@@ -6434,9 +6421,6 @@ void ImGui::HandleDragScroll()
         if (!g.DragScrollWindow)
             return;
 
-        // Remember velocity for when the button is released.
-        g.DragScrollVelocity = - io.MouseDelta / io.DeltaTime;
-
         // Bail out if not (yet) in a dragging state.
         if (!IsMouseDragging(io.DragScrollButton))
             return;
@@ -6445,6 +6429,9 @@ void ImGui::HandleDragScroll()
         ImVec2 drag_delta = GetMouseDragDelta(io.DragScrollButton);
         SetScrollX(g.DragScrollWindow, g.DragScrollOldValue.x - drag_delta.x);
         SetScrollY(g.DragScrollWindow, g.DragScrollOldValue.y - drag_delta.y);
+
+        // Remember velocity for when the button is released.
+        g.DragScrollVelocity = - io.MouseDelta / io.DeltaTime;
 
         // Ensure no widget is active, to avoid activating buttons, menus,etc.
         ClearActiveID();
@@ -6457,22 +6444,22 @@ void ImGui::HandleDragScroll()
         if (!g.DragScrollWindow)
             return;
 
-        const float min_speed_2 = g.IO.DragScrollMinSpeed * g.IO.DragScrollMinSpeed;
+        const float min_speed_2 = io.DragScrollMinSpeed * io.DragScrollMinSpeed;
         ImVec2& vel = g.DragScrollVelocity;
 
         // Check if speed high is enough to keep gliding.
-        g.DragScrollIsGliding = ImLengthSqr(g.DragScrollVelocity) > min_speed_2;
+        g.DragScrollIsGliding = ImLengthSqr(vel) > min_speed_2;
 
         // Perform kinetic scrolling if gliding.
         if (g.DragScrollIsGliding)
         {
             ImVec2 old_pos = g.DragScrollWindow->Scroll;
-            ImVec2 new_pos = old_pos + g.IO.DeltaTime * vel;
+            ImVec2 new_pos = old_pos + io.DeltaTime * vel;
             SetScrollX(g.DragScrollWindow, new_pos.x);
             SetScrollY(g.DragScrollWindow, new_pos.y);
 
             // Decelerate scroll velocity.
-            const float dv = g.IO.DragScrollDecel * g.IO.DeltaTime;
+            const float dv = io.DragScrollDecel * io.DeltaTime;
             if (dv > ImAbs(vel.x))
                 vel.x = 0.0f;
             else
@@ -6489,10 +6476,13 @@ void ImGui::HandleDragScroll()
             if ((new_pos.y <= 0 && vel.y < 0) || (new_pos.y >= max.y && vel.y > 0))
                 vel.y = 0;
 
-            // When gliding, we invalidate mouse pos, we don't want any hover events.
-            g.IO.MousePos = g.IO.MousePosPrev = ImVec2(-FLT_MAX, -FLT_MAX);
-            g.IO.MouseDelta = ImVec2(0.0f, 0.0f);
+            // When gliding, we don't want any hover events.
             ClearActiveID();
+            // If Touchscreen, invalidate mouse position and drag delta, so we don't generate hover events.
+            if (io.MouseSource == ImGuiMouseSource_TouchScreen) {
+                io.MousePos = io.MousePosPrev = ImVec2(-FLT_MAX, -FLT_MAX);
+                ResetMouseDragDelta(io.DragScrollButton);
+            }
         }
     }
 }
