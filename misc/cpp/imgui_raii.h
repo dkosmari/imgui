@@ -12,8 +12,6 @@
 
 #include <imgui.h>
 
-#include "imgui_stdlib.h"
-
 
 namespace ImGui::RAII {
 
@@ -451,10 +449,10 @@ namespace ImGui::RAII {
 
         explicit
         StyleColor(ImGuiCol idx,
-                   const auto&... args)
+                   const auto& col)
             noexcept
         {
-            PushStyleColor(idx, args...);
+            PushStyleColor(idx, col);
         }
 
         ~StyleColor()
@@ -470,10 +468,18 @@ namespace ImGui::RAII {
 
         explicit
         StyleVar(ImGuiStyleVar idx,
-                 const auto& arg)
+                 float val)
             noexcept
         {
-            PushStyleVar(idx, arg);
+            PushStyleVar(idx, val);
+        }
+
+        explicit
+        StyleVar(ImGuiStyleVar idx,
+                 const ImVec2& val)
+            noexcept
+        {
+            PushStyleVar(idx, val);
         }
 
         ~StyleVar()
@@ -643,6 +649,5 @@ namespace ImGui::RAII {
     }; // struct Window
 
 } // namespace ImGui::RAII
-
 
 #endif // IMGUI_DISABLE
