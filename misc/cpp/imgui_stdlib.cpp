@@ -500,19 +500,15 @@ namespace ImGui {
 
             int
             Callback(ImGuiInputTextCallbackData* data)
+                noexcept
             {
                 auto user_data = reinterpret_cast<Data*>(data->UserData);
                 IM_ASSERT(user_data);
                 if (data->EventFlag == ImGuiInputTextFlags_CallbackResize) {
                     auto& str = *user_data->str;
                     IM_ASSERT(data->Buf == str.data());
-                    try {
-                        str.resize(data->BufTextLen);
-                        data->Buf = str.data();
-                    }
-                    catch (...) {
-                        std::abort();
-                    }
+                    str.resize(data->BufTextLen);
+                    data->Buf = str.data();
                 } else if (user_data->func)
                     user_data->func(data);
                 return 0;
@@ -530,7 +526,6 @@ namespace ImGui {
               InputTextFunction func)
     {
         flags |= ImGuiInputTextFlags_CallbackResize;
-
         InputTextHelper::Data data;
         data.str = &value;
         data.func = std::move(func);
@@ -550,6 +545,7 @@ namespace ImGui {
                        ImGuiInputTextFlags flags,
                        InputTextFunction func)
     {
+        flags |= ImGuiInputTextFlags_CallbackResize;
         InputTextHelper::Data data;
         data.str = &value;
         data.func = std::move(func);
@@ -570,6 +566,7 @@ namespace ImGui {
                       ImGuiInputTextFlags flags,
                       InputTextFunction func)
     {
+        flags |= ImGuiInputTextFlags_CallbackResize;
         InputTextHelper::Data data;
         data.str = &value;
         data.func = std::move(func);
