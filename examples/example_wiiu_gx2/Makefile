@@ -81,5 +81,6 @@ $(ELF_FILE): $(OBJECTS)
 	$(CXX) -o $@ $^ $(CXXFLAGS) $(LDFLAGS) $(LIBS)
 
 
+WIILOAD ?= tcp:wiiu
 run: $(RPX_FILE)
-	WIILOAD=tcp:wiiu wiiload $<
+	WIILOAD=$(WIILOAD) wiiload $<

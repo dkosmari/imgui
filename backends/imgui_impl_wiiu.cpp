@@ -307,13 +307,39 @@ bool ImGui_ImplWiiU_ProcessInput(ImGui_ImplWiiU_ControllerInput* input)
     return false;
 }
 
-void     ImGui_ImplWiiU_DrawKeyboardOverlay(ImGui_ImplWiiU_KeyboardOverlayType type)
+static GX2SurfaceFormat ImGui_ImplWiiU_AdjustGammaForSWKBD(GX2ColorBuffer* cb, GX2RenderTarget target)
+{
+    if (!cb)
+        return GX2_SURFACE_FORMAT_INVALID;
+
+    // NOTE: we only try if the surface is similar enough
+    if (cb->surface.format == GX2_SURFACE_FORMAT_UNORM_R8_G8_B8_A8) {
+        GX2SurfaceFormat old_format = cb->surface.format;
+        cb->surface.format = GX2_SURFACE_FORMAT_SRGB_R8_G8_B8_A8;
+        GX2InitColorBufferRegs(cb);
+        GX2SetColorBuffer(cb, target);
+        return old_format;
+    }
+    return cb->surface.format;
+}
+
+static void ImGui_ImplWiiU_RestoreGammaForSWKBD(GX2ColorBuffer* cb, GX2RenderTarget target, GX2SurfaceFormat old_format)
+{
+    if (!cb)
+        return;
+    cb->surface.format = old_format;
+    GX2InitColorBufferRegs(cb);
+    GX2SetColorBuffer(cb, target);
+}
+
+void ImGui_ImplWiiU_DrawKeyboardOverlay(ImGui_ImplWiiU_KeyboardOverlayType type, GX2ColorBuffer* cb, GX2RenderTarget target)
 {
     ImGui_ImplWiiU_Data* bd = ImGui_ImplWiiU_GetBackendData();
     IM_ASSERT(bd != NULL && "Did you call ImGui_ImplWiiU_Init()?");
 
     if (nn::swkbd::GetStateInputForm() != nn::swkbd::State::Hidden)
     {
+        GX2SurfaceFormat old_format = ImGui_ImplWiiU_AdjustGammaForSWKBD(cb, target);
         if (type == ImGui_KeyboardOverlay_Auto)
         {
             if (bd->LastController == nn::swkbd::ControllerType::DrcGamepad)
@@ -325,5 +351,6 @@ void     ImGui_ImplWiiU_DrawKeyboardOverlay(ImGui_ImplWiiU_KeyboardOverlayType t
             nn::swkbd::DrawDRC();
         else if (type == ImGui_KeyboardOverlay_TV)
             nn::swkbd::DrawTV();
+        ImGui_ImplWiiU_RestoreGammaForSWKBD(cb, target, old_format);
     }
 }

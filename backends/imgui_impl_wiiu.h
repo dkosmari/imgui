@@ -4,6 +4,9 @@
 #pragma once
 #include "imgui.h"      // IMGUI_IMPL_API
 
+#include <gx2/enum.h>
+// Color buffer for drawing swkbd.
+#include <gx2/surface.h>
 // GamePad Input
 #include <vpad/input.h>
 // Controller Input
@@ -28,4 +31,4 @@ enum ImGui_ImplWiiU_KeyboardOverlayType
 IMGUI_IMPL_API bool     ImGui_ImplWiiU_Init();
 IMGUI_IMPL_API void     ImGui_ImplWiiU_Shutdown();
 IMGUI_IMPL_API bool     ImGui_ImplWiiU_ProcessInput(ImGui_ImplWiiU_ControllerInput* input);
-IMGUI_IMPL_API void     ImGui_ImplWiiU_DrawKeyboardOverlay(ImGui_ImplWiiU_KeyboardOverlayType type = ImGui_KeyboardOverlay_Auto);
+IMGUI_IMPL_API void     ImGui_ImplWiiU_DrawKeyboardOverlay(ImGui_ImplWiiU_KeyboardOverlayType type = ImGui_KeyboardOverlay_Auto, GX2ColorBuffer* cb = NULL, GX2RenderTarget target = GX2_RENDER_TARGET_0);
