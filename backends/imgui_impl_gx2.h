@@ -1,4 +1,6 @@
 // dear imgui: Renderer Backend for the Nintendo Wii U using GX2
+// Copyright (c) 2023 GaryOderNichts
+
 #pragma once
 #include "imgui.h"      // IMGUI_IMPL_API
 

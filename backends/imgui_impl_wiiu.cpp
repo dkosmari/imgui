@@ -1,4 +1,6 @@
 // dear imgui: Platform Backend for the Wii U
+// Copyright (c) 2023 GaryOderNichts
+
 #include <string>
 
 #include "imgui.h"
