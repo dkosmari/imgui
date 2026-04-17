@@ -170,7 +170,7 @@ main()
 
         WHBGfxBeginRenderTV();
         GX2SetViewport(0, 0, io.DisplaySize.x, io.DisplaySize.y, 0.0f, 1.0f);
-        WHBGfxClearColor(0.4f, 0.0f, 0.2f, 1.0f);
+        WHBGfxClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
         // Draw to TV
         ImGui_ImplGX2_RenderDrawData(ImGui::GetDrawData());
 
@@ -182,8 +182,7 @@ main()
         WHBGfxFinishRenderTV();
 
         // Copy TV to DRC
-        GX2CopyColorBufferToScanBuffer(WHBGfxGetTVColourBuffer(),
-                                       GX2_SCAN_TARGET_DRC);
+        GX2CopyColorBufferToScanBuffer(WHBGfxGetTVColourBuffer(), GX2_SCAN_TARGET_DRC);
 
         WHBGfxFinishRender();
     }
