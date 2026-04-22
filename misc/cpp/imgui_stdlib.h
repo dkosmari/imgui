@@ -207,11 +207,26 @@ namespace ImGui {
               ImGuiInputTextFlags flags = 0,
               InputTextFunction func = {});
 
+    IMGUI_API
+    bool
+    InputText(const std::string& label,
+              std::string* value,
+              ImGuiInputTextFlags flags = 0,
+              InputTextFunction func = {});
+
 
     IMGUI_API
     bool
     InputTextMultiline(const std::string& label,
                        std::string& value,
+                       const ImVec2& size = ImVec2(0, 0),
+                       ImGuiInputTextFlags flags = 0,
+                       InputTextFunction func = {});
+
+    IMGUI_API
+    bool
+    InputTextMultiline(const std::string& label,
+                       std::string* value,
                        const ImVec2& size = ImVec2(0, 0),
                        ImGuiInputTextFlags flags = 0,
                        InputTextFunction func = {});
@@ -222,6 +237,14 @@ namespace ImGui {
     InputTextWithHint(const std::string& label,
                       const std::string& hint,
                       std::string& value,
+                      ImGuiInputTextFlags flags = 0,
+                      InputTextFunction func = {});
+
+    IMGUI_API
+    bool
+    InputTextWithHint(const std::string& label,
+                      const std::string& hint,
+                      std::string* value,
                       ImGuiInputTextFlags flags = 0,
                       InputTextFunction func = {});
 

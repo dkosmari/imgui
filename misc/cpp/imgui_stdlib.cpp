@@ -539,6 +539,16 @@ namespace ImGui {
 
 
     bool
+    InputText(const std::string& label,
+              std::string* value,
+              ImGuiInputTextFlags flags,
+              InputTextFunction func)
+    {
+        return InputText(label, *value, flags, std::move(func));
+    }
+
+
+    bool
     InputTextMultiline(const std::string& label,
                        std::string& value,
                        const ImVec2& size,
@@ -560,6 +570,17 @@ namespace ImGui {
 
 
     bool
+    InputTextMultiline(const std::string& label,
+                       std::string* value,
+                       const ImVec2& size,
+                       ImGuiInputTextFlags flags,
+                       InputTextFunction func)
+    {
+        return InputTextMultiline(label, *value, size, flags, std::move(func));
+    }
+
+
+    bool
     InputTextWithHint(const std::string& label,
                       const std::string& hint,
                       std::string& value,
@@ -577,6 +598,17 @@ namespace ImGui {
                                  flags,
                                  &InputTextHelper::Callback,
                                  &data);
+    }
+
+
+    bool
+    InputTextWithHint(const std::string& label,
+                      const std::string& hint,
+                      std::string& value,
+                      ImGuiInputTextFlags flags,
+                      InputTextFunction func)
+    {
+        return InputTextWithHint(label, hint, *value, flags, std::move(func));
     }
 
 
