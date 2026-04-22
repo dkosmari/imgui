@@ -15,6 +15,20 @@
 #include <gx2/mem.h>
 #include <gx2r/surface.h>
 
+// GX2 Data
+struct ImGui_ImplGX2_Data
+{
+    uint32_t VertexBufferSize;
+    void* VertexBuffer;
+    uint32_t IndexBufferSize;
+    void* IndexBuffer;
+
+    ImGui_ImplGX2_Texture* FontTexture;
+
+    WHBGfxShaderGroup* ShaderGroup;
+
+    ImGui_ImplGX2_Data() { memset(this, 0, sizeof(*this)); }
+};
 
 static const unsigned char shader_gsh[] = {
   0x47, 0x66, 0x78, 0x32, 0x00, 0x00, 0x00, 0x20, 0x00, 0x00, 0x00, 0x07,
@@ -165,21 +179,6 @@ static const unsigned char shader_gsh[] = {
 };
 // static unsigned int shader_gsh_len = 1732;
 
-
-// GX2 Data
-struct ImGui_ImplGX2_Data
-{
-    uint32_t VertexBufferSize;
-    void* VertexBuffer;
-    uint32_t IndexBufferSize;
-    void* IndexBuffer;
-
-    ImGui_ImplGX2_Texture* FontTexture;
-
-    WHBGfxShaderGroup* ShaderGroup;
-
-    ImGui_ImplGX2_Data() { memset(this, 0, sizeof(*this)); }
-};
 
 // Backend data stored in io.BackendRendererUserData
 static ImGui_ImplGX2_Data* ImGui_ImplGX2_GetBackendData()

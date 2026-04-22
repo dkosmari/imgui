@@ -1,5 +1,6 @@
 // dear imgui: Platform Backend for the Wii U
-// Copyright (c) 2023 GaryOderNichts
+// Copyright (C) 2023 GaryOderNichts
+// Copyright (C) 2026 Daniel K. O. (dkosmari)
 
 #include <string>
 
@@ -8,7 +9,7 @@
 #include "imgui_impl_wiiu.h"
 #include <stdlib.h> // malloc/free
 
-// Software keyboard
+#include <coreinit/time.h>
 #include <nn/swkbd.h>
 
 static_assert(sizeof(ImWchar) == 2);
@@ -20,9 +21,13 @@ struct ImGui_ImplWiiU_Data
     nn::swkbd::AppearArg AppearArg{};
     nn::swkbd::ControllerType LastController{};
     std::u16string swkbdInitialText{};
+    OSTime Time{};
+    GX2ColorBuffer* ColorBuffer{};
+    GX2RenderTarget RenderTarget{};
 
     bool WantedTextInput{};
     bool WasTouched{};
+    ImGuiID OldFocused{};
 };
 
 // Backend data stored in io.BackendPlatformUserData
@@ -255,41 +260,7 @@ bool ImGui_ImplWiiU_ProcessInput(ImGui_ImplWiiU_ControllerInput* input)
 {
     ImGui_ImplWiiU_Data* bd = ImGui_ImplWiiU_GetBackendData();
     IM_ASSERT(bd != NULL && "Did you call ImGui_ImplWiiU_Init()?");
-    ImGuiIO& io = ImGui::GetIO();
-
-    // Show keyboard if wanted
-    if (io.WantTextInput && !bd->WantedTextInput)
-    {
-        ImGuiInputTextState* state = ImGui::GetInputTextState(ImGui::GetActiveID());
-        if (state)
-        {
-            if (!(state->Flags & ImGuiInputTextFlags_AlwaysOverwrite))
-            {
-                // TODO: calculate how many UTF-16 codepoints are actually needed.
-                bd->swkbdInitialText.resize(state->TextA.Size);
-                ImTextStrFromUtf8(reinterpret_cast<ImWchar*>(bd->swkbdInitialText.data()),
-                                  bd->swkbdInitialText.size() + 1,
-                                  state->TextA.begin(),
-                                  state->TextA.end());
-                bd->AppearArg.inputFormArg.initialText = bd->swkbdInitialText.data();
-            }
-
-            bd->AppearArg.inputFormArg.maxTextLength = state->BufCapacity;
-            bd->AppearArg.inputFormArg.higlightInitialText = !!(state->Flags & ImGuiInputTextFlags_AutoSelectAll);
-
-            if (state->Flags & ImGuiInputTextFlags_Password)
-                bd->AppearArg.inputFormArg.passwordMode = nn::swkbd::PasswordMode::Fade;
-            else
-                bd->AppearArg.inputFormArg.passwordMode = nn::swkbd::PasswordMode::Clear;
-        }
-
-        // Open the keyboard for the controller which requested the text input
-        bd->AppearArg.keyboardArg.configArg.controllerType = bd->LastController;
-
-        if (nn::swkbd::GetStateInputForm() == nn::swkbd::State::Hidden)
-            nn::swkbd::AppearInputForm(bd->AppearArg);
-    }
-    bd->WantedTextInput = io.WantTextInput;
+    // ImGuiIO& io = ImGui::GetIO();
 
     // Update keyboard input
     if (nn::swkbd::GetStateInputForm() != nn::swkbd::State::Hidden)
@@ -307,39 +278,48 @@ bool ImGui_ImplWiiU_ProcessInput(ImGui_ImplWiiU_ControllerInput* input)
     return false;
 }
 
-static GX2SurfaceFormat ImGui_ImplWiiU_AdjustGammaForSWKBD(GX2ColorBuffer* cb, GX2RenderTarget target)
+static GX2SurfaceFormat ImGui_ImplWiiU_AdjustGammaForSWKBD()
 {
-    if (!cb)
-        return GX2_SURFACE_FORMAT_INVALID;
+    ImGui_ImplWiiU_Data* bd = ImGui_ImplWiiU_GetBackendData();
+    IM_ASSERT(bd != NULL && "Did you call ImGui_ImplWiiU_Init()?");
+
+    GX2ColorBuffer* cb = bd->ColorBuffer;
+    IM_ASSERT(cb != NULL && "Did you call ImGui_ImplWiiU_NewFrame()?");
 
     // NOTE: we only try if the surface is similar enough
     if (cb->surface.format == GX2_SURFACE_FORMAT_UNORM_R8_G8_B8_A8) {
         GX2SurfaceFormat old_format = cb->surface.format;
         cb->surface.format = GX2_SURFACE_FORMAT_SRGB_R8_G8_B8_A8;
         GX2InitColorBufferRegs(cb);
-        GX2SetColorBuffer(cb, target);
+        GX2SetColorBuffer(cb, bd->RenderTarget);
         return old_format;
     }
-    return cb->surface.format;
+    return GX2_SURFACE_FORMAT_INVALID;
 }
 
-static void ImGui_ImplWiiU_RestoreGammaForSWKBD(GX2ColorBuffer* cb, GX2RenderTarget target, GX2SurfaceFormat old_format)
+static void ImGui_ImplWiiU_RestoreGammaForSWKBD(GX2SurfaceFormat old_format)
 {
-    if (!cb)
+    ImGui_ImplWiiU_Data* bd = ImGui_ImplWiiU_GetBackendData();
+    IM_ASSERT(bd != NULL && "Did you call ImGui_ImplWiiU_Init()?");
+
+    GX2ColorBuffer* cb = bd->ColorBuffer;
+    IM_ASSERT(cb != NULL && "Did you call ImGui_ImplWiiU_NewFrame()?");
+
+    if (!cb || old_format == GX2_SURFACE_FORMAT_INVALID)
         return;
     cb->surface.format = old_format;
     GX2InitColorBufferRegs(cb);
-    GX2SetColorBuffer(cb, target);
+    GX2SetColorBuffer(cb, bd->RenderTarget);
 }
 
-void ImGui_ImplWiiU_DrawKeyboardOverlay(ImGui_ImplWiiU_KeyboardOverlayType type, GX2ColorBuffer* cb, GX2RenderTarget target)
+void ImGui_ImplWiiU_DrawKeyboardOverlay(ImGui_ImplWiiU_KeyboardOverlayType type)
 {
     ImGui_ImplWiiU_Data* bd = ImGui_ImplWiiU_GetBackendData();
     IM_ASSERT(bd != NULL && "Did you call ImGui_ImplWiiU_Init()?");
 
     if (nn::swkbd::GetStateInputForm() != nn::swkbd::State::Hidden)
     {
-        GX2SurfaceFormat old_format = ImGui_ImplWiiU_AdjustGammaForSWKBD(cb, target);
+        GX2SurfaceFormat old_format = ImGui_ImplWiiU_AdjustGammaForSWKBD();
         if (type == ImGui_KeyboardOverlay_Auto)
         {
             if (bd->LastController == nn::swkbd::ControllerType::DrcGamepad)
@@ -351,6 +331,99 @@ void ImGui_ImplWiiU_DrawKeyboardOverlay(ImGui_ImplWiiU_KeyboardOverlayType type,
             nn::swkbd::DrawDRC();
         else if (type == ImGui_KeyboardOverlay_TV)
             nn::swkbd::DrawTV();
-        ImGui_ImplWiiU_RestoreGammaForSWKBD(cb, target, old_format);
+        ImGui_ImplWiiU_RestoreGammaForSWKBD(old_format);
     }
+}
+
+static std::u16string to_utf16(const char* input, int size)
+{
+    std::u16string result;
+    if (size <= 0)
+        return result;
+    // TODO: if we had ImTextCountUtf16BytesFcalculate how many UTF-16 elements we need, this is overestimating it.
+    result.resize(size);
+    ImTextStrFromUtf8(reinterpret_cast<ImWchar*>(result.data()),
+                      result.size() + 1,
+                      input,
+                      input + size);
+    return result;
+}
+
+void ImGui_ImplWiiU_NewFrame(GX2ColorBuffer* cb, GX2RenderTarget target)
+{
+    ImGui_ImplWiiU_Data* bd = ImGui_ImplWiiU_GetBackendData();
+    IM_ASSERT(bd != NULL && "Did you call ImGui_ImplWiiU_Init()?");
+    ImGuiIO& io = ImGui::GetIO();
+
+    IM_ASSERT(cb != NULL && "Color buffer cannot be null!");
+    bd->ColorBuffer = cb;
+    bd->RenderTarget = target;
+
+    // Update io.DeltaTime
+    const OSTime now = OSGetSystemTime();
+    io.DeltaTime = bd->Time > 0 ? static_cast<float>(now - bd->Time) / static_cast<float>(OSTimerClockSpeed) : 1.0f / 60.0f;
+    bd->Time = now;
+
+    // Update io.DisplaySize
+    io.DisplaySize.x = bd->ColorBuffer->surface.width;
+    io.DisplaySize.y = bd->ColorBuffer->surface.height;
+
+    // Show swkbd if either:
+    //   - io.WantTextInput changed to true
+    //   - io.WantTextInput is true and focused widget changed
+    // Hide swkbd if:
+    //   - io.WantTextInput changed to false
+    const bool changed_want_text = io.WantTextInput && !bd->WantedTextInput;
+    const ImGuiID focused = ImGui::GetFocusID();
+    const bool changed_focus = focused != bd->OldFocused;
+    bool starting_text_input = false;
+    bool stopping_text_input = false;
+    if (changed_want_text)
+    {
+        if (io.WantTextInput)
+            starting_text_input = true;
+        else
+            stopping_text_input = true;
+    }
+    if (changed_focus)
+    {
+        if (focused == 0)
+            stopping_text_input = true;
+        if (io.WantTextInput)
+            starting_text_input = true;
+    }
+
+    if (starting_text_input)
+    {
+        ImGuiInputTextState* state = ImGui::GetInputTextState(focused);
+        if (state)
+        {
+            if (!(state->Flags & ImGuiInputTextFlags_AlwaysOverwrite))
+            {
+                bd->swkbdInitialText = to_utf16(state->TextA.Data, state->TextA.Size);
+                bd->AppearArg.inputFormArg.initialText = bd->swkbdInitialText.data();
+            }
+
+            bd->AppearArg.inputFormArg.maxTextLength = state->BufCapacity;
+            bd->AppearArg.inputFormArg.higlightInitialText = !!(state->Flags & ImGuiInputTextFlags_AutoSelectAll);
+
+            if (state->Flags & ImGuiInputTextFlags_Password)
+                bd->AppearArg.inputFormArg.passwordMode = nn::swkbd::PasswordMode::Fade;
+            else
+                bd->AppearArg.inputFormArg.passwordMode = nn::swkbd::PasswordMode::Clear;
+
+            // Open the keyboard for the controller which requested the text input
+            bd->AppearArg.keyboardArg.configArg.controllerType = bd->LastController;
+
+            if (nn::swkbd::GetStateInputForm() == nn::swkbd::State::Hidden)
+                nn::swkbd::AppearInputForm(bd->AppearArg);
+        }
+    }
+    if (stopping_text_input)
+    {
+        nn::swkbd::DisappearInputForm();
+    }
+
+    bd->WantedTextInput = io.WantTextInput;
+    bd->OldFocused = focused;
 }

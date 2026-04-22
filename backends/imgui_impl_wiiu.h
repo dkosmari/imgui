@@ -1,5 +1,6 @@
 // dear imgui: Platform Backend for the Wii U
-// Copyright (c) 2023 GaryOderNichts
+// Copyright (C) 2023 GaryOderNichts
+// Copyright (C) 2026 Daniel K. O. (dkosmari)
 
 #pragma once
 #include "imgui.h"      // IMGUI_IMPL_API
@@ -31,4 +32,7 @@ enum ImGui_ImplWiiU_KeyboardOverlayType
 IMGUI_IMPL_API bool     ImGui_ImplWiiU_Init();
 IMGUI_IMPL_API void     ImGui_ImplWiiU_Shutdown();
 IMGUI_IMPL_API bool     ImGui_ImplWiiU_ProcessInput(ImGui_ImplWiiU_ControllerInput* input);
-IMGUI_IMPL_API void     ImGui_ImplWiiU_DrawKeyboardOverlay(ImGui_ImplWiiU_KeyboardOverlayType type = ImGui_KeyboardOverlay_Auto, GX2ColorBuffer* cb = NULL, GX2RenderTarget target = GX2_RENDER_TARGET_0);
+
+// TODO: add options/functions to control SWKBD region and language.
+IMGUI_IMPL_API void     ImGui_ImplWiiU_DrawKeyboardOverlay(ImGui_ImplWiiU_KeyboardOverlayType type = ImGui_KeyboardOverlay_Auto);
+IMGUI_IMPL_API void     ImGui_ImplWiiU_NewFrame(GX2ColorBuffer* cb, GX2RenderTarget target = GX2_RENDER_TARGET_0);

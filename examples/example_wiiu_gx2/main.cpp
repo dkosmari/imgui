@@ -115,12 +115,11 @@ main()
 
         // Process ImGui GUI.
 
-        // We will render on the TV, so make sure ImGui knows the display dimensions.
+        // We will render on the TV, and copy the result to the DRC.
         GX2ColorBuffer* cb = WHBGfxGetTVColourBuffer();
-        io.DisplaySize.x = cb->surface.width;
-        io.DisplaySize.y = cb->surface.height;
 
         // Start the Dear ImGui frame
+        ImGui_ImplWiiU_NewFrame(cb);
         ImGui_ImplGX2_NewFrame();
         ImGui::NewFrame();
 
@@ -177,7 +176,7 @@ main()
         // Render keyboard overlay
         GX2SetViewport(0, 0, io.DisplaySize.x, io.DisplaySize.y, 0.0f, 1.0f);
         GX2SetScissor(0, 0, io.DisplaySize.x, io.DisplaySize.y);
-        ImGui_ImplWiiU_DrawKeyboardOverlay(ImGui_KeyboardOverlay_Auto, cb, GX2_RENDER_TARGET_0);
+        ImGui_ImplWiiU_DrawKeyboardOverlay(ImGui_KeyboardOverlay_Auto);
 
         WHBGfxFinishRenderTV();
 

@@ -949,13 +949,15 @@ void ImGui_ImplSDL2_NewFrame()
     bool changed_focus = focused != bd->OldFocusID;
     bool starting_text_input = false;
     bool stopping_text_input = false;
-    if (changed_want) {
+    if (changed_want)
+    {
         if (io.WantTextInput)
             starting_text_input = true;
         else
             stopping_text_input = true;
     }
-    if (changed_focus) {
+    if (changed_focus)
+    {
         if (focused == 0)
             stopping_text_input = true;
         if (io.WantTextInput) // still want text input, after switching focus
