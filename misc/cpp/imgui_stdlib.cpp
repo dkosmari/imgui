@@ -604,7 +604,7 @@ namespace ImGui {
     bool
     InputTextWithHint(const std::string& label,
                       const std::string& hint,
-                      std::string& value,
+                      std::string* value,
                       ImGuiInputTextFlags flags,
                       InputTextFunction func)
     {
