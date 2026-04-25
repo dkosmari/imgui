@@ -12,6 +12,9 @@ include $(DEVKITPRO)/wut/share/wut_rules
 CXX += -std=c++20
 
 CPPFLAGS := \
+	-D__WIIU__ \
+	-D__wiiu__ \
+	-D__WUT__ \
 	-I$(IMGUI_DIR) \
 	-I$(IMGUI_DIR)/backends \
 	-I$(WUT_ROOT)/include \
@@ -22,10 +25,7 @@ CXXFLAGS := \
 	-Os \
 	-ffunction-sections \
 	-fdata-sections \
-	$(MACHDEP) \
-	-D__WIIU__ \
-	-D__wiiu__ \
-	-D__WUT__
+	$(MACHDEP)
 
 LDFLAGS := $(ARCH) $(RPXSPECS)
 
@@ -55,7 +55,7 @@ SOURCES := \
 OBJECTS := $(addsuffix .o,$(basename $(notdir $(SOURCES))))
 
 
-.PHONY: all clean run
+.PHONY: all clean run company
 
 
 all: $(RPX_FILE)
@@ -84,3 +84,10 @@ $(ELF_FILE): $(OBJECTS)
 WIILOAD ?= tcp:wiiu
 run: $(RPX_FILE)
 	WIILOAD=$(WIILOAD) wiiload $<
+
+
+company: compile_flags.txt
+
+compile_flags.txt: Makefile
+	printf "%s" "$(CPPFLAGS) $(CXXFLAGS)" | xargs -n1 | sort -u > compile_flags.txt
+	$(CPP) -xc++ $(CXXFLAGS) /dev/null -E -Wp,-v 2>&1 | sed -n 's,^ ,-I,p' >> compile_flags.txt

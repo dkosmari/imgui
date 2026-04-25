@@ -1,7 +1,10 @@
+#include <cassert>
+#include <cstdio>
 #include <coreinit/memory.h>
 #include <gx2/registers.h>
 #include <gx2/swap.h>
 #include <padscore/kpad.h>
+#include <sndcore2/core.h>
 #include <vpad/input.h>
 #include <whb/gfx.h>
 #include <whb/proc.h>
@@ -14,11 +17,20 @@
 static const float default_font_size = 32;
 
 void
-load_fonts()
+load_font(OSSharedDataType font, bool merge)
 {
+    static const char* names[OS_SHAREDDATATYPE_FONT_MAX] = {
+        [OS_SHAREDDATATYPE_FONT_CHINESE]   = "CafeCn.ttf",
+        [OS_SHAREDDATATYPE_FONT_KOREAN]    = "CafeKr.ttf",
+        [OS_SHAREDDATATYPE_FONT_STANDARD]  = "CafeStd.ttf",
+        [OS_SHAREDDATATYPE_FONT_TAIWANESE] = "CafeCn.ttf",
+    };
+
+    assert(font < OS_SHAREDDATATYPE_FONT_MAX);
+
     auto& io = ImGui::GetIO();
-    // Load main font: CafeStd
     ImFontConfig config;
+    config.MergeMode = merge;
     config.EllipsisChar = U'…';
     // config.GlyphOffset.y = - default_font_size * (4.0f / 32.0f);
     config.FontDataOwnedByAtlas = false;
@@ -26,32 +38,31 @@ load_fonts()
     void* font_data = nullptr;
     uint32_t font_size = 0;
 
-    if (OSGetSharedData(OS_SHAREDDATATYPE_FONT_STANDARD, 0,
+    if (OSGetSharedData(font, 0,
                         &font_data, &font_size))
+    {
+        std::snprintf(config.Name, sizeof config.Name, names[font]);
         io.Fonts->AddFontFromMemoryTTF(font_data, font_size,
                                        default_font_size, &config);
+    }
+}
 
-    config.MergeMode = true;
-
-    if (OSGetSharedData(OS_SHAREDDATATYPE_FONT_CHINESE, 0,
-                        &font_data, &font_size))
-        io.Fonts->AddFontFromMemoryTTF(font_data, font_size,
-                                       default_font_size, &config);
-
-    if (OSGetSharedData(OS_SHAREDDATATYPE_FONT_KOREAN, 0,
-                        &font_data, &font_size))
-        io.Fonts->AddFontFromMemoryTTF(font_data, font_size,
-                                       default_font_size, &config);
-
-    if (OSGetSharedData(OS_SHAREDDATATYPE_FONT_TAIWANESE, 0,
-                        &font_data, &font_size))
-        io.Fonts->AddFontFromMemoryTTF(font_data, font_size,
-                                       default_font_size, &config);
+void
+load_fonts()
+{
+    load_font(OS_SHAREDDATATYPE_FONT_STANDARD, false);
+    load_font(OS_SHAREDDATATYPE_FONT_CHINESE, true);
+    load_font(OS_SHAREDDATATYPE_FONT_KOREAN, true);
+    load_font(OS_SHAREDDATATYPE_FONT_TAIWANESE, true);
 }
 
 int
 main()
 {
+    // Briefly initialize the audio system to stop the boot sound.
+    AXInit();
+    AXQuit();
+
     KPADInit();
     WPADEnableURCC(true);
     // WPADEnableWBC();
@@ -63,7 +74,6 @@ main()
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
-    // io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
 
     io.LogFilename = nullptr; // don't save log
@@ -93,7 +103,8 @@ main()
     bool show_another_window = false;
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
-    while (WHBProcIsRunning()) {
+    while (WHBProcIsRunning())
+    {
 
         // Read inputs.
         wiiu_input = {};
@@ -106,7 +117,8 @@ main()
             }
         }
 
-        for (int ch = 0; ch < 4; ++ch) {
+        for (int ch = 0; ch < 4; ++ch)
+        {
             auto r = KPADRead(static_cast<KPADChan>(ch), &kpad[ch], 1);
             if (r == 1)
                 wiiu_input.kpad[ch] = &kpad[ch];
