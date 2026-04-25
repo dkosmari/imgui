@@ -7,9 +7,9 @@
 #include "imgui.h"
 #include "imgui_internal.h"
 #include "imgui_impl_wiiu.h"
-#include <stdlib.h> // malloc/free
 
 #include <coreinit/time.h>
+#include <gx2/registers.h>
 #include <nn/swkbd.h>
 
 static_assert(sizeof(ImWchar) == 2);
@@ -50,12 +50,12 @@ bool ImGui_ImplWiiU_Init()
     // Initialize and create software keyboard
     nn::swkbd::CreateArg createArg;
 
-    createArg.workMemory = malloc(nn::swkbd::GetWorkMemorySize(0));
-    createArg.fsClient = (FSClient*) malloc(sizeof(FSClient));
+    createArg.workMemory = ImGui::MemAlloc(nn::swkbd::GetWorkMemorySize(0));
+    createArg.fsClient = (FSClient*) ImGui::MemAlloc(sizeof(FSClient));
     if (!createArg.workMemory || !createArg.fsClient)
     {
-        free(createArg.workMemory);
-        free(createArg.fsClient);
+        ImGui::MemFree(createArg.workMemory);
+        ImGui::MemFree(createArg.fsClient);
         return false;
     }
 
@@ -319,6 +319,10 @@ void ImGui_ImplWiiU_DrawKeyboardOverlay(ImGui_ImplWiiU_KeyboardOverlayType type)
 
     if (nn::swkbd::GetStateInputForm() != nn::swkbd::State::Hidden)
     {
+        ImGuiIO& io = ImGui::GetIO();
+        GX2SetViewport(0, 0, io.DisplaySize.x, io.DisplaySize.y, 0.0f, 1.0f);
+        GX2SetScissor(0, 0, io.DisplaySize.x, io.DisplaySize.y);
+
         GX2SurfaceFormat old_format = ImGui_ImplWiiU_AdjustGammaForSWKBD();
         if (type == ImGui_KeyboardOverlay_Auto)
         {

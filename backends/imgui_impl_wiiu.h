@@ -6,12 +6,9 @@
 #include "imgui.h"      // IMGUI_IMPL_API
 
 #include <gx2/enum.h>
-// Color buffer for drawing swkbd.
-#include <gx2/surface.h>
-// GamePad Input
-#include <vpad/input.h>
-// Controller Input
-#include <padscore/kpad.h>
+#include <gx2/surface.h>        // Color buffer for drawing swkbd.
+#include <vpad/input.h>         // GamePad Input
+#include <padscore/kpad.h>      // Wiimote Input
 
 struct ImGui_ImplWiiU_ControllerInput
 {

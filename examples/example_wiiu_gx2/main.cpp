@@ -186,8 +186,6 @@ main()
         ImGui_ImplGX2_RenderDrawData(ImGui::GetDrawData());
 
         // Render keyboard overlay
-        GX2SetViewport(0, 0, io.DisplaySize.x, io.DisplaySize.y, 0.0f, 1.0f);
-        GX2SetScissor(0, 0, io.DisplaySize.x, io.DisplaySize.y);
         ImGui_ImplWiiU_DrawKeyboardOverlay(ImGui_KeyboardOverlay_Auto);
 
         WHBGfxFinishRenderTV();
