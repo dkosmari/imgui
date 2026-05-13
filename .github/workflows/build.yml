@@ -32,6 +32,11 @@ jobs:
         with:
           path: ${{ github.workspace }}/imgui
 
+      - name: Set up MSVC x64
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
       # The VulkanSDK libs for Windows is manually generated using build_windows_vulkan_libs.ps1 + attached to issue #8925.
       # (we have a .yml workflow in commit history if it becomes ever useful to create this on CI too)
       - name: Install Dependencies
@@ -76,7 +81,6 @@ jobs:
         shell: cmd
         run: |
           cd examples\example_null
-          call "%VS_PATH%\VC\Auxiliary\Build\vcvars64.bat"
           .\build_win32.bat /W4
 
       - name: Build example_null (single file build)
