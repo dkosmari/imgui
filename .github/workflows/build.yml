@@ -32,11 +32,6 @@ jobs:
         with:
           path: ${{ github.workspace }}/imgui
 
-      - name: Set up MSVC x64
-        uses: ilammy/msvc-dev-cmd@v1
-        with:
-          arch: x64
-
       # The VulkanSDK libs for Windows is manually generated using build_windows_vulkan_libs.ps1 + attached to issue #8925.
       # (we have a .yml workflow in commit history if it becomes ever useful to create this on CI too)
       - name: Install Dependencies
@@ -77,6 +72,11 @@ jobs:
           g++ -I. -Wall -Wformat -DIMGUI_API='__declspec(dllimport)' -DIMGUI_IMPL_API= -o example_null.exe examples/example_null/main.cpp -L. -limgui
           rm -f example_null.exe libimgui.* example_single_file.*
 
+      - name: Set up MSVC 64-bit
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
       - name: Build example_null (extra warnings, msvc 64-bit)
         shell: cmd
         run: |
@@ -108,6 +108,11 @@ jobs:
           EOF
           g++ -I. -Wall -Wformat -o example_single_file.exe example_single_file.cpp -limm32
 
+      - name: Set up MSVC 64-bit
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
       - name: Build example_null (as DLL)
         shell: cmd
         run: |
@@ -120,6 +125,11 @@ jobs:
 
       # Win64 examples are more frequently compilted than the Win32 examples.
       # More of the Win32 examples requires 'workflow_run' to reduce waste.
+      - name: Set up MSVC 32-bit
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x86
+
       - name: Build Win32 example_glfw_opengl2
         shell: cmd
         run: '"%MSBUILD_PATH%\MSBuild.exe" examples/example_glfw_opengl2/example_glfw_opengl2.vcxproj /p:Platform=Win32 /p:Configuration=Release'
@@ -194,6 +204,12 @@ jobs:
         if: github.event_name == 'workflow_run'
 
       # Windows 64-bits
+
+      - name: Set up MSVC 64-bit
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
       - name: Build Win64 example_glfw_opengl2
         shell: cmd
         run: '"%MSBUILD_PATH%\MSBuild.exe" examples/example_glfw_opengl2/example_glfw_opengl2.vcxproj /p:Platform=x64 /p:Configuration=Release'
