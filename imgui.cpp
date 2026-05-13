@@ -6497,8 +6497,8 @@ void ImGui::HandleDragScroll()
     {
         // Button is down.
 
-        // Never allow gliding while the drag scroll button is down.
-        g.DragScrollVelocity = ImVec2(0.0f, 0.0f);
+        // Low-resolution screens can have inconsistent drag speed, so try to smooth it by this amount.
+        float smoothVelFactor = 0.25f;
 
         if (IsMouseClicked(io.DragScrollButton))
         {
@@ -6514,15 +6514,19 @@ void ImGui::HandleDragScroll()
 
             g.DragScrollWindow = FindScrollableWindow(pointed_window);
             // Save original scroll value.
-            if (g.DragScrollWindow)
+            if (g.DragScrollWindow) {
+                // Started a new drag, so we zero the velocity, and remember the original scroll value.
+                smoothVelFactor = 0.0f; // Don't smooth the velocity when starting a new drag.
+                g.DragScrollVelocity = ImVec2(0.0f, 0.0f);
                 g.DragScrollOldValue = g.DragScrollWindow->Scroll;
+            }
         }
 
         // Bail out if there's no window to scroll.
         if (!g.DragScrollWindow)
             return;
 
-        // Bail out if not (yet) in a dragging state.
+        // Bail out if not (yet) in a dragging state (too small of a drag.)
         if (!IsMouseDragging(io.DragScrollButton))
             return;
 
@@ -6532,7 +6536,9 @@ void ImGui::HandleDragScroll()
         SetScrollY(g.DragScrollWindow, g.DragScrollOldValue.y - drag_delta.y);
 
         // Remember velocity for when the button is released.
-        g.DragScrollVelocity = - io.MouseDelta / io.DeltaTime;
+        g.DragScrollVelocity = ImLerp(- io.MouseDelta / io.DeltaTime,
+                                      g.DragScrollVelocity,
+                                      smoothVelFactor);
 
         // Ensure no widget is active, to avoid activating buttons, menus,etc.
         ClearActiveID();
@@ -6581,7 +6587,7 @@ void ImGui::HandleDragScroll()
             ClearActiveID();
             // If Touchscreen, invalidate mouse position and drag delta, so we don't generate hover events.
             if (io.MouseSource == ImGuiMouseSource_TouchScreen) {
-                io.MousePos = io.MousePosPrev = ImVec2(-FLT_MAX, -FLT_MAX);
+                io.MousePos = ImVec2(-FLT_MAX, -FLT_MAX);
                 ResetMouseDragDelta(io.DragScrollButton);
             }
         }
@@ -10725,8 +10731,11 @@ void ImGui::UpdateInputEvents(bool trickle_fast_inputs)
             IM_ASSERT(button >= 0 && button < ImGuiMouseButton_COUNT);
             if (trickle_fast_inputs && ((mouse_button_changed & (1 << button)) || mouse_wheeled))
                 break;
+#if 0
+            // NOTE: touch screen inputs should always send position, followed by click event.
             if (trickle_fast_inputs && e->MouseButton.MouseSource == ImGuiMouseSource_TouchScreen && mouse_moved) // #2702: TouchScreen have no initial hover.
                 break;
+#endif
             io.MouseDown[button] = e->MouseButton.Down;
             io.MouseSource = e->MouseButton.MouseSource;
             mouse_button_changed |= (1 << button);

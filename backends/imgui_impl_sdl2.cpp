@@ -139,6 +139,8 @@
 #include <SDL_vulkan.h>
 #endif
 
+// #define DEBUG_FORCE_TOUCH
+
 // SDL Data
 struct ImGui_ImplSDL2_Data
 {
@@ -474,7 +476,13 @@ bool ImGui_ImplSDL2_ProcessEvent(const SDL_Event* event)
             if (ImGui_ImplSDL2_GetViewportForWindowID(event->motion.windowID) == nullptr)
                 return false;
             ImVec2 mouse_pos((float)event->motion.x, (float)event->motion.y);
+#ifdef DEBUG_FORCE_TOUCH
+            if (event->motion.state == 0)
+                return true;
+            io.AddMouseSourceEvent(ImGuiMouseSource_TouchScreen);
+#else
             io.AddMouseSourceEvent(event->motion.which == SDL_TOUCH_MOUSEID ? ImGuiMouseSource_TouchScreen : ImGuiMouseSource_Mouse);
+#endif
             io.AddMousePosEvent(mouse_pos.x, mouse_pos.y);
             return true;
         }
@@ -493,7 +501,11 @@ bool ImGui_ImplSDL2_ProcessEvent(const SDL_Event* event)
 #if defined(__EMSCRIPTEN__) && !SDL_VERSION_ATLEAST(2,31,0)
             wheel_x /= 100.0f;
 #endif
+#ifdef DEBUG_FORCE_TOUCH
+            io.AddMouseSourceEvent(ImGuiMouseSource_TouchScreen);
+#else
             io.AddMouseSourceEvent(event->wheel.which == SDL_TOUCH_MOUSEID ? ImGuiMouseSource_TouchScreen : ImGuiMouseSource_Mouse);
+#endif
             io.AddMouseWheelEvent(wheel_x, wheel_y);
             return true;
         }
@@ -510,7 +522,13 @@ bool ImGui_ImplSDL2_ProcessEvent(const SDL_Event* event)
             if (event->button.button == SDL_BUTTON_X2) { mouse_button = 4; }
             if (mouse_button == -1)
                 break;
+#ifdef DEBUG_FORCE_TOUCH
+            io.AddMouseSourceEvent(ImGuiMouseSource_TouchScreen);
+            ImVec2 mouse_pos((float)event->button.x, (float)event->button.y);
+            io.AddMousePosEvent(mouse_pos.x, mouse_pos.y);
+#else
             io.AddMouseSourceEvent(event->button.which == SDL_TOUCH_MOUSEID ? ImGuiMouseSource_TouchScreen : ImGuiMouseSource_Mouse);
+#endif
             io.AddMouseButtonEvent(mouse_button, (event->type == SDL_MOUSEBUTTONDOWN));
             bd->MouseButtonsDown = (event->type == SDL_MOUSEBUTTONDOWN) ? (bd->MouseButtonsDown | (1 << mouse_button)) : (bd->MouseButtonsDown & ~(1 << mouse_button));
             return true;

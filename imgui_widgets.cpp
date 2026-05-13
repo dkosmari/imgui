@@ -10704,7 +10704,8 @@ bool    ImGui::TabItemEx(ImGuiTabBar* tab_bar, const char* label, bool* p_open, 
         return tab_contents_visible;
     }
 
-    if (tab_bar->SelectedTabId == id)
+    const bool tab_is_selected = tab_bar->SelectedTabId == id;
+    if (tab_is_selected)
         tab->LastFrameSelected = g.FrameCount;
 
     // Backup current layout position
@@ -10739,7 +10740,9 @@ bool    ImGui::TabItemEx(ImGuiTabBar* tab_bar, const char* label, bool* p_open, 
 
     // Click to Select a tab
     // Allow the close button to overlap
-    ImGuiButtonFlags button_flags = ((ImGuiButtonFlags)(is_tab_button ? ImGuiButtonFlags_PressedOnClickRelease : ImGuiButtonFlags_PressedOnClick) | ImGuiButtonFlags_AllowOverlap);
+    ImGuiButtonFlags button_flags = (ImGuiButtonFlags)(is_tab_button || g.IO.ConfigDragScroll ? ImGuiButtonFlags_PressedOnClickRelease : ImGuiButtonFlags_PressedOnClick);
+    if (!g.IO.ConfigDragScroll || tab_is_selected)
+        button_flags |= ImGuiButtonFlags_AllowOverlap;
     if (g.DragDropActive)
         button_flags |= ImGuiButtonFlags_PressedOnDragDropHold;
     bool hovered, held, pressed;
@@ -10765,6 +10768,7 @@ bool    ImGui::TabItemEx(ImGuiTabBar* tab_bar, const char* label, bool* p_open, 
                 TabBarQueueReorderFromMousePos(tab_bar, tab, g.IO.MousePos);
             }
         }
+        SetDragAction();
     }
 
 #if 0
