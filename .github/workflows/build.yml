@@ -111,8 +111,6 @@ jobs:
       - name: Build example_null (as DLL)
         shell: cmd
         run: |
-          call "%VS_PATH%\VC\Auxiliary\Build\vcvars64.bat"
-
           echo #define IMGUI_API __declspec(dllexport)         >  example_single_file.cpp
           echo #define IMGUI_IMPLEMENTATION                    >> example_single_file.cpp
           echo #include "misc/single_file/imgui_single_file.h" >> example_single_file.cpp
