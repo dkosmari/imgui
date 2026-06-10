@@ -26,7 +26,6 @@ using namespace std::literals;
 
 namespace ImGui {
 
-
     namespace {
 
         template<concepts::arithmetic T>
@@ -37,6 +36,7 @@ namespace ImGui {
         template<>
         constexpr
         ImGuiDataType data_type_v<std::int8_t> = ImGuiDataType_S8;
+
         template<>
         constexpr
         ImGuiDataType data_type_v<std::uint8_t> = ImGuiDataType_U8;
@@ -44,6 +44,7 @@ namespace ImGui {
         template<>
         constexpr
         ImGuiDataType data_type_v<std::int16_t> = ImGuiDataType_S16;
+
         template<>
         constexpr
         ImGuiDataType data_type_v<std::uint16_t> = ImGuiDataType_U16;
@@ -51,6 +52,7 @@ namespace ImGui {
         template<>
         constexpr
         ImGuiDataType data_type_v<std::int32_t> = ImGuiDataType_S32;
+
         template<>
         constexpr
         ImGuiDataType data_type_v<std::uint32_t> = ImGuiDataType_U32;
@@ -58,6 +60,7 @@ namespace ImGui {
         template<>
         constexpr
         ImGuiDataType data_type_v<std::int64_t> = ImGuiDataType_S64;
+
         template<>
         constexpr
         ImGuiDataType data_type_v<std::uint64_t> = ImGuiDataType_U64;
@@ -70,66 +73,32 @@ namespace ImGui {
 
         template<>
         constexpr
+        ImGuiDataType data_type_v<wchar_t> =
+            std::numeric_limits<wchar_t>::is_signed
+            ? (sizeof(wchar_t) == 2 ? ImGuiDataType_S16 : ImGuiDataType_S32)
+            : (sizeof(wchar_t) == 2 ? ImGuiDataType_U16 : ImGuiDataType_U32);
+
+        template<>
+        constexpr
+        ImGuiDataType data_type_v<char8_t> = ImGuiDataType_U8;
+
+        template<>
+        constexpr
+        ImGuiDataType data_type_v<char16_t> = ImGuiDataType_U16;
+
+        template<>
+        constexpr
+        ImGuiDataType data_type_v<char32_t> = ImGuiDataType_U32;
+
+        template<>
+        constexpr
         ImGuiDataType data_type_v<float> = ImGuiDataType_Float;
+
         template<>
         constexpr
         ImGuiDataType data_type_v<double> = ImGuiDataType_Double;
 
-
-
-        template<typename T>
-        constexpr
-        const char* format_string_v;
-
-        template<>
-        constexpr
-        const char* format_string_v<char> = "c";
-
-        template<>
-        constexpr
-        const char* format_string_v<std::int8_t>  = PRIi8;
-        template<>
-        constexpr
-        const char* format_string_v<std::uint8_t> = PRIu8;
-
-        template<>
-        constexpr
-        const char* format_string_v<std::int16_t>  = PRIi16;
-        template<>
-        constexpr
-        const char* format_string_v<std::uint16_t> = PRIu16;
-
-        template<>
-        constexpr
-        const char* format_string_v<std::int32_t>  = PRIi32;
-        template<>
-        constexpr
-        const char* format_string_v<std::uint32_t> = PRIu32;
-
-        template<>
-        constexpr
-        const char* format_string_v<std::int64_t>  = PRIi64;
-        template<>
-        constexpr
-        const char* format_string_v<std::uint64_t> = PRIu64;
-
-        template<>
-        constexpr
-        const char* format_string_v<float>        = "f";
-
-        template<>
-        constexpr
-        const char* format_string_v<double>       = "lf";
-
-        template<>
-        constexpr
-        const char* format_string_v<char *>       = "s";
-        template<>
-        constexpr
-        const char* format_string_v<const char *> = "s";
-
     } // namespace
-
 
 
     bool
@@ -264,6 +233,67 @@ namespace ImGui {
     }
 
 
+    bool
+    Checkbox(const std::string& label,
+             bool& value)
+    {
+        return Checkbox(label.data(), &value);
+    }
+
+
+
+    template<std::integral I>
+    IMGUI_API
+    bool
+    CheckboxFlags(const std::string& label,
+                  I& flags_var,
+                  I flags_ref)
+    {
+        bool exact = (flags_var & flags_ref) == flags_ref;
+        bool partial = (flags_var & flags_ref) != 0;
+        bool pressed;
+        if (!exact && !partial) {
+            ImGuiContext& g = *GImGui;
+            g.NextItemData.ItemFlags |= ImGuiItemFlags_MixedValue;
+        }
+        pressed = Checkbox(label, exact);
+        if (pressed) {
+            if (exact)
+                flags_var |= flags_ref;
+            else
+                flags_var &= ~flags_ref;
+        }
+        return pressed;
+    }
+
+    /* --------------------------------------------- */
+    /* Explicit instantiations for CheckboxFlags<>() */
+    /* --------------------------------------------- */
+
+#define INSTANTIATE(x)                          \
+    template                                    \
+    bool                                        \
+    CheckboxFlags<x>(const std::string& label,  \
+                     x& flags_var,              \
+                     x flags_ref)
+
+    INSTANTIATE(std::int8_t);
+    INSTANTIATE(std::uint8_t);
+    INSTANTIATE(std::int16_t);
+    INSTANTIATE(std::uint16_t);
+    INSTANTIATE(std::int32_t);
+    INSTANTIATE(std::uint32_t);
+    INSTANTIATE(std::int64_t);
+    INSTANTIATE(std::uint64_t);
+    INSTANTIATE(char);
+    INSTANTIATE(wchar_t);
+    INSTANTIATE(char8_t);
+    INSTANTIATE(char16_t);
+    INSTANTIATE(char32_t);
+
+#undef INSTANTIATE
+
+
     template<concepts::arithmetic T>
     bool
     Drag(const std::string& label,
@@ -308,6 +338,10 @@ namespace ImGui {
     INSTANTIATE(std::int64_t);
     INSTANTIATE(std::uint64_t);
     INSTANTIATE(char);
+    INSTANTIATE(wchar_t);
+    INSTANTIATE(char8_t);
+    INSTANTIATE(char16_t);
+    INSTANTIATE(char32_t);
     INSTANTIATE(float);
     INSTANTIATE(double);
 
@@ -359,17 +393,17 @@ namespace ImGui {
 
     INSTANTIATE_N(std::int8_t);
     INSTANTIATE_N(std::uint8_t);
-
     INSTANTIATE_N(std::int16_t);
     INSTANTIATE_N(std::uint16_t);
-
     INSTANTIATE_N(std::int32_t);
     INSTANTIATE_N(std::uint32_t);
-
     INSTANTIATE_N(std::int64_t);
     INSTANTIATE_N(std::uint64_t);
-
     INSTANTIATE_N(char);
+    INSTANTIATE_N(wchar_t);
+    INSTANTIATE_N(char8_t);
+    INSTANTIATE_N(char16_t);
+    INSTANTIATE_N(char32_t);
     INSTANTIATE_N(float);
     INSTANTIATE_N(double);
 
@@ -411,17 +445,17 @@ namespace ImGui {
 
     INSTANTIATE(std::int8_t);
     INSTANTIATE(std::uint8_t);
-
     INSTANTIATE(std::int16_t);
     INSTANTIATE(std::uint16_t);
-
     INSTANTIATE(std::int32_t);
     INSTANTIATE(std::uint32_t);
-
     INSTANTIATE(std::int64_t);
     INSTANTIATE(std::uint64_t);
-
     INSTANTIATE(char);
+    INSTANTIATE(wchar_t);
+    INSTANTIATE(char8_t);
+    INSTANTIATE(char16_t);
+    INSTANTIATE(char32_t);
     INSTANTIATE(float);
     INSTANTIATE(double);
 
@@ -449,7 +483,6 @@ namespace ImGui {
                             flags);
     }
 
-
     /* ----------------------------------------- */
     /* Explicit instantiations for Input<T, N>() */
     /* ----------------------------------------- */
@@ -471,17 +504,17 @@ namespace ImGui {
 
     INSTANTIATE_N(std::int8_t);
     INSTANTIATE_N(std::uint8_t);
-
     INSTANTIATE_N(std::int16_t);
     INSTANTIATE_N(std::uint16_t);
-
     INSTANTIATE_N(std::int32_t);
     INSTANTIATE_N(std::uint32_t);
-
     INSTANTIATE_N(std::int64_t);
     INSTANTIATE_N(std::uint64_t);
-
     INSTANTIATE_N(char);
+    INSTANTIATE_N(wchar_t);
+    INSTANTIATE_N(char8_t);
+    INSTANTIATE_N(char16_t);
+    INSTANTIATE_N(char32_t);
     INSTANTIATE_N(float);
     INSTANTIATE_N(double);
 
@@ -643,6 +676,14 @@ namespace ImGui {
 
 
     bool
+    RadioButton(const std::string& label,
+                bool active)
+    {
+        return RadioButton(label.data(), active);
+    }
+
+
+    bool
     Selectable(const std::string& label,
                bool selected,
                ImGuiSelectableFlags flags,
@@ -714,7 +755,6 @@ namespace ImGui {
                             flags);
     }
 
-
     /* --------------------------------------- */
     /* Explicit instantiations for Slider<T>() */
     /* --------------------------------------- */
@@ -731,17 +771,17 @@ namespace ImGui {
 
     INSTANTIATE(std::int8_t);
     INSTANTIATE(std::uint8_t);
-
     INSTANTIATE(std::int16_t);
     INSTANTIATE(std::uint16_t);
-
     INSTANTIATE(std::int32_t);
     INSTANTIATE(std::uint32_t);
-
     INSTANTIATE(std::int64_t);
     INSTANTIATE(std::uint64_t);
-
     INSTANTIATE(char);
+    INSTANTIATE(wchar_t);
+    INSTANTIATE(char8_t);
+    INSTANTIATE(char16_t);
+    INSTANTIATE(char32_t);
     INSTANTIATE(float);
     INSTANTIATE(double);
 
@@ -769,7 +809,6 @@ namespace ImGui {
                              flags);
     }
 
-
     /* ------------------------------------------ */
     /* Explicit instantiations for Slider<T, N>() */
     /* ------------------------------------------ */
@@ -791,17 +830,17 @@ namespace ImGui {
 
     INSTANTIATE_N(std::int8_t);
     INSTANTIATE_N(std::uint8_t);
-
     INSTANTIATE_N(std::int16_t);
     INSTANTIATE_N(std::uint16_t);
-
     INSTANTIATE_N(std::int32_t);
     INSTANTIATE_N(std::uint32_t);
-
     INSTANTIATE_N(std::int64_t);
     INSTANTIATE_N(std::uint64_t);
-
     INSTANTIATE_N(char);
+    INSTANTIATE_N(wchar_t);
+    INSTANTIATE_N(char8_t);
+    INSTANTIATE_N(char16_t);
+    INSTANTIATE_N(char32_t);
     INSTANTIATE_N(float);
     INSTANTIATE_N(double);
 
@@ -847,7 +886,6 @@ namespace ImGui {
     }
 
 
-
     void
     TextUnformatted(std::string_view text)
     {
@@ -862,17 +900,28 @@ namespace ImGui {
     }
 
 
-    template<typename T>
-    void
-    Value(const std::string& prefix,
-          T value)
+    std::string
+    to_string(ImGuiCol_ color)
     {
-        const std::string fmt = "%s: %"s + format_string_v<T>;
-        Text(fmt.data(),
-             prefix.data(),
-             value);
+        return GetStyleColorName(color);
     }
 
+
+    template<concepts::arithmetic T>
+    void
+    Value(const std::string& prefix,
+          T value,
+          const std::string& format)
+    {
+        if (format.empty())
+            Text("%s: %s",
+                 prefix.data(),
+                 std::to_string(value).data());
+        else
+            Text(("%s: " + format).data(),
+                 prefix.data(),
+                 value);
+    }
 
     /* -------------------------------------- */
     /* Explicit instantiations for Value<T>() */
@@ -882,28 +931,34 @@ namespace ImGui {
     template                                    \
     void                                        \
     Value<x>(const std::string& prefix,         \
-             x)
+             x,                                 \
+             const std::string& format)
 
     INSTANTIATE(std::int8_t);
     INSTANTIATE(std::uint8_t);
-
     INSTANTIATE(std::int16_t);
     INSTANTIATE(std::uint16_t);
-
     INSTANTIATE(std::int32_t);
     INSTANTIATE(std::uint32_t);
-
     INSTANTIATE(std::int64_t);
     INSTANTIATE(std::uint64_t);
-
     INSTANTIATE(char);
+    INSTANTIATE(wchar_t);
+    INSTANTIATE(char8_t);
+    INSTANTIATE(char16_t);
+    INSTANTIATE(char32_t);
     INSTANTIATE(float);
     INSTANTIATE(double);
 
-    INSTANTIATE(char*);
-    INSTANTIATE(const char*);
-
 #undef INSTANTIATE
+
+
+    void
+    Value(const std::string& prefix,
+          bool value)
+    {
+        Value(prefix.data(), value);
+    }
 
 
     void
@@ -912,6 +967,60 @@ namespace ImGui {
     {
         Text("%s: %s", prefix.data(), value.data());
     }
+
+
+    template<concepts::arithmetic T>
+    bool
+    VSlider(const std::string& label,
+            const ImVec2& size,
+            T& variable,
+            T min,
+            T max,
+            const std::string& format,
+            ImGuiSliderFlags flags)
+    {
+        return VSliderScalar(label.data(),
+                             size,
+                             data_type_v<T>,
+                             &variable,
+                             &min,
+                             &max,
+                             format.empty() ? nullptr : format.data(),
+                             flags);
+    }
+
+    /* ---------------------------------------- */
+    /* Explicit instantiations for VSlider<T>() */
+    /* ---------------------------------------- */
+
+#define INSTANTIATE(x)                          \
+    template                                    \
+    bool                                        \
+    VSlider<x>(const std::string& label,        \
+               const ImVec2& size,              \
+               x& variable,                     \
+               x min,                           \
+               x max,                           \
+               const std::string& format,       \
+               ImGuiSliderFlags flags)
+
+    INSTANTIATE(std::int8_t);
+    INSTANTIATE(std::uint8_t);
+    INSTANTIATE(std::int16_t);
+    INSTANTIATE(std::uint16_t);
+    INSTANTIATE(std::int32_t);
+    INSTANTIATE(std::uint32_t);
+    INSTANTIATE(std::int64_t);
+    INSTANTIATE(std::uint64_t);
+    INSTANTIATE(char);
+    INSTANTIATE(wchar_t);
+    INSTANTIATE(char8_t);
+    INSTANTIATE(char16_t);
+    INSTANTIATE(char32_t);
+    INSTANTIATE(float);
+    INSTANTIATE(double);
+
+#undef INSTANTIATE
 
 } // namespace ImGui
 

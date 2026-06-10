@@ -47,6 +47,9 @@ namespace ImGui {
                        std::convertible_to<decltype(T::b), float> &&
                        std::convertible_to<decltype(T::a), float>;
 
+        template<typename T>
+        concept enumeration = std::is_enum<T>::value;
+
     } // namespace concepts
 
 
@@ -145,6 +148,34 @@ namespace ImGui {
     CalcTextSize(const std::string& text,
                  bool hide_text_after_double_hash = false,
                  float wrap_width = -1.0f);
+
+
+    IMGUI_API
+    bool
+    Checkbox(const std::string& label,
+             bool& value);
+
+
+    /// Instantiated for all integral types.
+    template<std::integral I>
+    IMGUI_API
+    bool
+    CheckboxFlags(const std::string& label,
+                  I& flags_var,
+                  I flags_ref);
+
+    /// Enums are converted to their underlying type.
+    template<concepts::enumeration E>
+    IMGUI_API
+    bool
+    CheckboxFlags(const std::string& label,
+                  E& flags_var,
+                  E flags_ref)
+    {
+        return CheckboxFlags(label,
+                             static_cast<std::underlying_type_t<E>&>(flags_var),
+                             static_cast<std::underlying_type_t<E>>(flags_ref));
+    }
 
 
     /// Wrapper for DragScalar().
@@ -279,6 +310,27 @@ namespace ImGui {
 
     IMGUI_API
     bool
+    RadioButton(const std::string& label,
+                bool active);
+
+
+    template<typename T>
+    IMGUI_API
+    inline
+    bool
+    RadioButton(const std::string& label,
+                T& variable,
+                T reference)
+    {
+        bool result = RadioButton(label, variable == reference);
+        if (result)
+            variable = reference;
+        return result;
+    }
+
+
+    IMGUI_API
+    bool
     Selectable(const std::string& label,
                bool selected = false,
                ImGuiSelectableFlags flags = 0,
@@ -388,6 +440,11 @@ namespace ImGui {
     TextWrapped(const std::string& text);
 
 
+    IMGUI_API
+    std::string
+    to_string(ImGuiCol_ color);
+
+
     /// Convert anything with .x, .y to ImVec2
     template<concepts::vec2 V>
     IMGUI_API
@@ -418,17 +475,34 @@ namespace ImGui {
     }
 
 
-    template<typename T>
+    template<concepts::arithmetic T>
     IMGUI_API
     void
     Value(const std::string& prefix,
-          T value);
+          T value,
+          const std::string& format = "");
 
+    IMGUI_API
+    void
+    Value(const std::string& prefix,
+          bool value);
 
     IMGUI_API
     void
     Value(const std::string& prefix,
           const std::string& value);
+
+
+    template<concepts::arithmetic T>
+    IMGUI_API
+    bool
+    VSlider(const std::string& label,
+            const ImVec2& size,
+            T& variable,
+            T min,
+            T max,
+            const std::string& format = "",
+            ImGuiSliderFlags flags = 0);
 
 } // namespace ImGui
 
