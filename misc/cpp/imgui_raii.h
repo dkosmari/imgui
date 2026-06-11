@@ -451,7 +451,15 @@ namespace ImGui::RAII {
 
         explicit
         StyleColor(ImGuiCol idx,
-                   const auto& col)
+                   ImU32 col)
+            noexcept
+        {
+            PushStyleColor(idx, col);
+        }
+
+        explicit
+        StyleColor(ImGuiCol idx,
+                   const ImVec4& col)
             noexcept
         {
             PushStyleColor(idx, col);
