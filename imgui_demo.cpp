@@ -132,6 +132,10 @@ Index of this file:
 #include "imgui.h"
 #ifndef IMGUI_DISABLE
 
+#ifdef IMGUI_DEMO_CAROUSEL
+#include "imgui_carousel.h"
+#endif
+
 // System includes
 #include <ctype.h>          // toupper
 #include <limits.h>         // INT_MIN, INT_MAX
@@ -392,6 +396,7 @@ void ImGui::ShowDemoWindow(bool* p_open)
     static bool no_background = false;
     static bool no_bring_to_front = false;
     static bool unsaved_document = false;
+    static bool no_glide = false;
 
     ImGuiWindowFlags window_flags = 0;
     if (no_titlebar)        window_flags |= ImGuiWindowFlags_NoTitleBar;
@@ -404,6 +409,7 @@ void ImGui::ShowDemoWindow(bool* p_open)
     if (no_background)      window_flags |= ImGuiWindowFlags_NoBackground;
     if (no_bring_to_front)  window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus;
     if (unsaved_document)   window_flags |= ImGuiWindowFlags_UnsavedDocument;
+    if (no_glide)           window_flags |= ImGuiWindowFlags_NoGlide;
     if (no_close)           p_open = NULL; // Don't pass our bool* to Begin
 
     // We specify a default position/size in case there's no data in the .ini file.
@@ -565,6 +571,8 @@ void ImGui::ShowDemoWindow(bool* p_open)
             ImGui::SameLine(); HelpMarker("How much of the scroll speed decelerates, in pixels per second.");
             ImGui::DragFloat("io.DragScrollMinSpeed", &io.DragScrollMinSpeed, 1.0f, 0.0f, 1000.0f, "%.0f");
             ImGui::SameLine(); HelpMarker("Minimum kinetic scroll speed, in pixels per second, before the scroll is stopped.");
+            ImGui::DragFloat("io.DragFlickThreshold", &io.DragFlickThreshold, 1.0f, 0.0f, 10000.0f, "%.0f");
+            ImGui::SameLine(); HelpMarker("Minimum speed to consider a drag scroll as a flick action.");
             ImGui::PopItemWidth();
 
             // Also read: https://github.com/ocornut/imgui/wiki/Debug-Tools
@@ -654,6 +662,7 @@ void ImGui::ShowDemoWindow(bool* p_open)
             ImGui::TableNextColumn(); ImGui::Checkbox("No background", &no_background);
             ImGui::TableNextColumn(); ImGui::Checkbox("No bring to front", &no_bring_to_front);
             ImGui::TableNextColumn(); ImGui::Checkbox("Unsaved document", &unsaved_document);
+            ImGui::TableNextColumn(); ImGui::Checkbox("No glide", &no_glide);
             ImGui::EndTable();
         }
     }
@@ -5324,6 +5333,170 @@ static void DemoWindowLayout()
         ImGui::SameLine();
         ImGui::SmallButton("++");
 
+        ImGui::TreePop();
+    }
+
+    if (ImGui::TreeNode("Carousel"))
+    {
+        IMGUI_DEMO_MARKER("Carousel");
+
+#ifdef IMGUI_DEMO_CAROUSEL
+        HelpMarker("This shows how to use the Carousel widget, from misc/carousel.");
+        const ImVec2 page_size{300.0f, ImGui::GetFontSize() * 4.0f};
+        static const char* times[] = {
+            "7 am",
+            "9 am",
+            "11 am",
+            "12 pm",
+            "3 pm",
+            "6 pm",
+            "8 pm",
+        };
+        const int num_times = sizeof(times) / sizeof(times[0]);
+        static const char* meals[] = {
+            "Breakfast",
+            "Second breakfast",
+            "Elevenses",
+            "Luncheon",
+            "Afternoon Tea",
+            "Dinner",
+            "Supper",
+        };
+        const int num_meals = sizeof(meals) / sizeof(meals[0]);
+
+        static int current_page_x = 0;
+        static int current_page_y = 0;
+        static int columns = 0;
+        static int rows = 0;
+        static bool jump_left = false;
+        static bool jump_right = false;
+        static bool jump_up = false;
+        static bool jump_down = false;
+        const float arrow_size = ImGui::GetFrameHeight();
+        const ImGuiStyle& style = ImGui::GetStyle();
+
+        static ImGuiCarouselSpecs specs;
+
+        ImGuiIO& io = ImGui::GetIO();
+        ImGui::DragFloat("snap_duration", &specs.snap_duration,
+                         0.01f, 0.1f, 5.0f,
+                         "%.2f seconds");
+
+        ImGui::Checkbox("enable flicking", &specs.flickable);
+        ImGui::DragFloat("io.DragFlickThreshold", &io.DragFlickThreshold, 1.0f, 0.0f, 10000.0f, "%.0f");
+        ImGui::TextWrapped("Note: increasing \"DragFlickThreshold\" must be balanced by lowering \"snap_duration\", or you will see strange slow-downs from the snap animation when flicking.");
+
+        ImGui::Checkbox("enable scrollbars", &specs.enable_hscrollbar);
+        specs.enable_vscrollbar = specs.enable_hscrollbar;
+
+        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + arrow_size + style.ItemSpacing.x);
+        ImGui::BeginDisabled(current_page_y == 0);
+        if (ImGui::ArrowButton("go_up", ImGuiDir_Up, ImVec2{page_size.x, 0}))
+            jump_up = true;
+        ImGui::EndDisabled();
+
+        ImGui::BeginDisabled(current_page_x == 0);
+        if (ImGui::ArrowButton("go_left", ImGuiDir_Left, ImVec2{arrow_size, page_size.y}))
+            jump_left = true;
+        ImGui::EndDisabled();
+
+        ImGui::SameLine();
+
+        if (ImGui::BeginCarousel("hobbit_schedule",
+                                 page_size,
+                                 specs)) {
+
+            // Add time items to the carousel.
+            ImGui::PushID("times");
+            ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4{0.0f, 0.5f, 0.0f, 1.0f});
+            for (int i = 0; i < num_times; ++i)
+            {
+                if (i > 0)
+                    ImGui::SameLine();
+                ImGui::PushID(i);
+                if (ImGui::BeginChild("time", page_size, ImGuiChildFlags_Borders))
+                {
+                    ImVec2 text_size = ImGui::CalcTextSize(times[i]);
+                    ImVec2 pos = {(page_size.x - text_size.x) / 2.0f,
+                                  (page_size.y - text_size.y) / 2.0f};
+                    ImGui::SetCursorPos(pos);
+                    ImGui::Text("%s", times[i]);
+                }
+                ImGui::EndChild();
+                ImGui::PopID();
+            }
+            ImGui::PopStyleColor();
+            ImGui::PopID();
+
+            // Add meal items to the carousel.
+            ImGui::PushID("meals");
+            ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4{0.25f, 0.0f, 0.5f, 1.0f});
+            for (int i = 0; i < num_meals; ++i)
+            {
+                if (i > 0)
+                    ImGui::SameLine();
+                ImGui::PushID(i);
+                if (ImGui::BeginChild("meal", page_size, ImGuiChildFlags_Borders))
+                {
+                    ImVec2 text_size = ImGui::CalcTextSize(meals[i]);
+                    ImVec2 pos = {(page_size.x - text_size.x) / 2.0f,
+                                  (page_size.y - text_size.y) / 2.0f};
+                    ImGui::SetCursorPos(pos);
+                    ImGui::Text("%s", meals[i]);
+                }
+                ImGui::EndChild();
+                ImGui::PopID();
+            }
+            ImGui::PopStyleColor();
+            ImGui::PopID();
+
+            // Query how many rows and columns there are.
+            columns = ImGui::CarouselGetColumns();
+            rows    = ImGui::CarouselGetRows();
+            // Query the current page, so we can disable navigation buttons.
+            current_page_x = ImGui::CarouselGetPageX();
+            current_page_y = ImGui::CarouselGetPageY();
+
+            // Apply navigation jumps, if requested.
+            if (jump_left)
+            {
+                ImGui::CarouselJumpPageLeft();
+                jump_left = false;
+            }
+            if (jump_right)
+            {
+                ImGui::CarouselJumpPageRight();
+                jump_right = false;
+            }
+            if (jump_up)
+            {
+                ImGui::CarouselJumpPageUp();
+                jump_up = false;
+            }
+            if (jump_down)
+            {
+                ImGui::CarouselJumpPageDown();
+                jump_down = false;
+            }
+
+            ImGui::EndCarousel();
+        }
+
+        ImGui::SameLine();
+
+        ImGui::BeginDisabled(current_page_x == columns - 1);
+        if (ImGui::ArrowButton("go_right", ImGuiDir_Right, ImVec2{arrow_size, page_size.y}))
+            jump_right = true;
+        ImGui::EndDisabled();
+
+        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + arrow_size + style.ItemSpacing.x);
+        ImGui::BeginDisabled(current_page_y == rows - 1);
+        if (ImGui::ArrowButton("go_down", ImGuiDir_Down, ImVec2{page_size.x, arrow_size}))
+            jump_down = true;
+        ImGui::EndDisabled();
+#else
+        HelpMarker("Define the macro IMGUI_DEMO_CAROUSEL to build this demo");
+#endif
         ImGui::TreePop();
     }
 }

@@ -1692,7 +1692,8 @@ ImGuiIO::ImGuiIO()
     ConfigDragScroll = false;
     DragScrollButton = ImGuiMouseButton_Left;
     DragScrollDecel = 5000.0f;
-    DragScrollMinSpeed = 300.0f;
+    DragScrollMinSpeed = 120.0f;
+    DragFlickThreshold = 600.0f;
 
     // Platform Functions
     // Note: Initialize() will setup default clipboard/ime handlers.
@@ -4210,6 +4211,7 @@ ImGuiContext::ImGuiContext(ImFontAtlas* shared_font_atlas)
     DragScrollWindow = NULL;
     DragScrollOldValue = ImVec2(0.0f, 0.0f);
     DragScrollVelocity = ImVec2(0.0f, 0.0f);
+    DragScrollActive = false;
 
     DebugDrawIdConflictsId = 0;
     DebugHookIdInfoId = 0;
@@ -6493,6 +6495,10 @@ void ImGui::HandleDragScroll()
         }
     }
 
+    ImVec2& vel = g.DragScrollVelocity;
+
+    g.DragScrollActive = false;
+
     if (IsMouseDown(io.DragScrollButton))
     {
         // Button is down.
@@ -6517,8 +6523,9 @@ void ImGui::HandleDragScroll()
             if (g.DragScrollWindow) {
                 // Started a new drag, so we zero the velocity, and remember the original scroll value.
                 smoothVelFactor = 0.0f; // Don't smooth the velocity when starting a new drag.
-                g.DragScrollVelocity = ImVec2(0.0f, 0.0f);
+                vel = ImVec2(0.0f, 0.0f);
                 g.DragScrollOldValue = g.DragScrollWindow->Scroll;
+                g.DragScrollActive = true;
             }
         }
 
@@ -6526,7 +6533,9 @@ void ImGui::HandleDragScroll()
         if (!g.DragScrollWindow)
             return;
 
-        // Bail out if not (yet) in a dragging state (too small of a drag.)
+        g.DragScrollActive = true;
+
+        // Bail out if not (yet) in a dragging state (too small of a drag) to change the scroll position.
         if (!IsMouseDragging(io.DragScrollButton))
             return;
 
@@ -6536,9 +6545,8 @@ void ImGui::HandleDragScroll()
         SetScrollY(g.DragScrollWindow, g.DragScrollOldValue.y - drag_delta.y);
 
         // Remember velocity for when the button is released.
-        g.DragScrollVelocity = ImLerp(- io.MouseDelta / io.DeltaTime,
-                                      g.DragScrollVelocity,
-                                      smoothVelFactor);
+        ImVec2 newVel = - io.MouseDelta / io.DeltaTime;
+        vel = ImLerp(newVel, vel, smoothVelFactor);
 
         // Ensure no widget is active, to avoid activating buttons, menus,etc.
         ClearActiveID();
@@ -6552,14 +6560,13 @@ void ImGui::HandleDragScroll()
             return;
 
         const float min_speed_2 = io.DragScrollMinSpeed * io.DragScrollMinSpeed;
-        ImVec2& vel = g.DragScrollVelocity;
         const float speed_2 = ImLengthSqr(vel);
 
         // Check if speed high is enough to keep gliding.
         const bool is_gliding = speed_2 > min_speed_2;
 
         // Perform kinetic scrolling if gliding.
-        if (is_gliding)
+        if (is_gliding && (g.DragScrollWindow->Flags & ImGuiWindowFlags_NoGlide) == 0)
         {
             const ImVec2 old_pos = g.DragScrollWindow->Scroll;
             const ImVec2 new_pos = old_pos + io.DeltaTime * vel;
@@ -6591,7 +6598,91 @@ void ImGui::HandleDragScroll()
                 ResetMouseDragDelta(io.DragScrollButton);
             }
         }
+        else
+        {
+            vel = ImVec2(0.0f, 0.0f);
+        }
     }
+}
+
+bool ImGui::IsDragScrolling()
+{
+    const ImGuiContext& g = *GImGui;
+    const ImGuiIO& io = g.IO;
+    if (!io.ConfigDragScroll)
+        return false;
+    if (g.DragScrollWindow != GetCurrentWindowRead())
+        return false;
+    return g.DragScrollActive;
+}
+
+bool ImGui::IsDragScrollGliding()
+{
+    const ImGuiContext& g = *GImGui;
+    const ImGuiIO& io = g.IO;
+    if (IsDragScrolling())
+        return false;
+    if (GetCurrentWindowRead()->Flags & ImGuiWindowFlags_NoGlide)
+        return false;
+    const ImVec2 vel = GetDragScrollVelocity();
+    const float speed_2 = ImLengthSqr(vel);
+    const float min_speed_2 = io.DragScrollMinSpeed * io.DragScrollMinSpeed;
+    return speed_2 > min_speed_2;
+}
+
+ImVec2 ImGui::GetDragScrollFlick(float threshold)
+{
+    const ImGuiContext& g = *GImGui;
+    const ImGuiIO& io = g.IO;
+    ImVec2 result{0, 0};
+
+    if (!io.ConfigDragScroll)
+        return result;
+    if (!g.DragScrollWindow)
+        return result;
+    if (g.DragScrollWindow != GetCurrentWindowRead())
+        return result;
+    // Flick can only happen if the button was just released.
+    if (!IsMouseReleased(io.DragScrollButton))
+        return result;
+
+    if (threshold < 0.0f)
+        threshold = io.DragFlickThreshold;
+
+    if (ImAbs(g.DragScrollVelocity.x) >= threshold)
+        result.x = g.DragScrollVelocity.x;
+    if (ImAbs(g.DragScrollVelocity.y) >= threshold)
+        result.y = g.DragScrollVelocity.y;
+
+    return result;
+}
+
+ImVec2 ImGui::GetDragScrollVelocity()
+{
+    ImGuiContext& g = *GImGui;
+    ImGuiIO& io = g.IO;
+    if (!io.ConfigDragScroll)
+        return ImVec2{0, 0};
+    if (!g.DragScrollWindow)
+        return ImVec2{0, 0};
+    if (g.DragScrollWindow != GetCurrentWindowRead())
+        return ImVec2{0, 0};
+    return g.DragScrollVelocity;
+}
+
+void ImGui::SetDragScrollVelocity(const ImVec2& vel)
+{
+    ImGuiContext& g = *GImGui;
+    ImGuiIO& io = g.IO;
+    if (!io.ConfigDragScroll)
+        return;
+    if (!g.DragScrollWindow)
+        return;
+    if (g.DragScrollWindow != GetCurrentWindowRead())
+        return;
+    if (g.DragScrollWindow->Flags & ImGuiWindowFlags_NoGlide)
+        return;
+    g.DragScrollVelocity = vel;
 }
 
 ImGuiID ImGui::GetItemID()
@@ -8711,6 +8802,26 @@ bool ImGui::IsWindowHovered(ImGuiHoveredFlags flags)
         return false;
 
     return true;
+}
+
+bool ImGui::IsWindowHorizontalScrollbarActive()
+{
+    ImGuiWindow* window = GetCurrentWindowRead();
+    if (!window)
+        return false;
+    ImGuiID active_id = GetActiveID();
+    ImGuiID scrollbar_id = GetWindowScrollbarID(window, ImGuiAxis_X);
+    return active_id == scrollbar_id;
+}
+
+bool ImGui::IsWindowVerticalScrollbarActive()
+{
+    ImGuiWindow* window = GetCurrentWindowRead();
+    if (!window)
+        return false;
+    ImGuiID active_id = GetActiveID();
+    ImGuiID scrollbar_id = GetWindowScrollbarID(window, ImGuiAxis_X);
+    return active_id == scrollbar_id;
 }
 
 float ImGui::GetWindowWidth()

@@ -17,8 +17,10 @@ CPPFLAGS := \
 	-D__WUT__ \
 	-I$(IMGUI_DIR) \
 	-I$(IMGUI_DIR)/backends \
+	-I$(IMGUI_DIR)/misc/carousel \
 	-I$(WUT_ROOT)/include \
-	-DIMGUI_DISABLE_DEFAULT_SHELL_FUNCTIONS
+	-DIMGUI_DISABLE_DEFAULT_SHELL_FUNCTIONS \
+	-DIMGUI_DEMO_CAROUSEL
 
 CXXFLAGS := \
 	-Wall -Wextra -Werror \
@@ -43,14 +45,15 @@ RPX_FILE := $(TARGET).rpx
 
 SOURCES := \
 	main.cpp \
+	wiiu-stdout.cpp \
 	$(IMGUI_DIR)/imgui.cpp \
 	$(IMGUI_DIR)/imgui_demo.cpp \
 	$(IMGUI_DIR)/imgui_draw.cpp \
 	$(IMGUI_DIR)/imgui_tables.cpp \
 	$(IMGUI_DIR)/imgui_widgets.cpp \
+	$(IMGUI_DIR)/misc/carousel/imgui_carousel.cpp \
 	$(IMGUI_DIR)/backends/imgui_impl_wiiu.cpp \
-	$(IMGUI_DIR)/backends/imgui_impl_gx2.cpp \
-
+	$(IMGUI_DIR)/backends/imgui_impl_gx2.cpp
 
 OBJECTS := $(addsuffix .o,$(basename $(notdir $(SOURCES))))
 
@@ -71,6 +74,9 @@ clean:
 	$(CXX) -o $@ -c $< $(CPPFLAGS) $(CXXFLAGS)
 
 %.o: $(IMGUI_DIR)/%.cpp
+	$(CXX) -o $@ -c $< $(CPPFLAGS) $(CXXFLAGS)
+
+%.o:$(IMGUI_DIR)/misc/carousel/%.cpp
 	$(CXX) -o $@ -c $< $(CPPFLAGS) $(CXXFLAGS)
 
 %.o: $(IMGUI_DIR)/backends/%.cpp

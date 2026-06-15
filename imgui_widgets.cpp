@@ -893,10 +893,15 @@ bool ImGui::ArrowButtonEx(const char* str_id, ImGuiDir dir, ImVec2 size, ImGuiBu
     return pressed;
 }
 
-bool ImGui::ArrowButton(const char* str_id, ImGuiDir dir)
+bool ImGui::ArrowButton(const char* str_id, ImGuiDir dir, const ImVec2& size_arg)
 {
     float sz = GetFrameHeight();
-    return ArrowButtonEx(str_id, dir, ImVec2(sz, sz), ImGuiButtonFlags_None);
+    ImVec2 size = size_arg;
+    if (size.x == 0)
+        size.x = sz;
+    if (size.y == 0)
+        size.y = sz;
+    return ArrowButtonEx(str_id, dir, size, ImGuiButtonFlags_None);
 }
 
 // Button to close a window

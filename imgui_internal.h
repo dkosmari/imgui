@@ -2257,6 +2257,7 @@ struct ImGuiContext
     ImGuiWindow*            DragScrollWindow;                   // Track which window is the target of a drag scroll.
     ImVec2                  DragScrollOldValue;                 // Store original scroll value before a drag scroll starts.
     ImVec2                  DragScrollVelocity;
+    bool                    DragScrollActive;
 
     // Item/widgets state and tracking information
     ImGuiID                 DebugDrawIdConflictsId;             // Set when we detect multiple items with the same identifier

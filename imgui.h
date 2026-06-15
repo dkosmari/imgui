@@ -465,11 +465,18 @@ namespace ImGui
     IMGUI_API bool          IsWindowCollapsed();
     IMGUI_API bool          IsWindowFocused(ImGuiFocusedFlags flags=0); // is current window focused? or its root/child, depending on flags. see flags for options.
     IMGUI_API bool          IsWindowHovered(ImGuiHoveredFlags flags=0); // is current window hovered and hoverable (e.g. not blocked by a popup/modal)? See ImGuiHoveredFlags_ for options. IMPORTANT: If you are trying to check whether your mouse should be dispatched to Dear ImGui or to your underlying app, you should not use this function! Use the 'io.WantCaptureMouse' boolean for that! Refer to FAQ entry "How can I tell whether to dispatch mouse/keyboard to Dear ImGui or my application?" for details.
+    IMGUI_API bool          IsWindowHorizontalScrollbarActive();        // is the user interacting with the window's horizontal scrollbar?
+    IMGUI_API bool          IsWindowVerticalScrollbarActive();          // is the user interacting with the window's vertical scrollbar?
     IMGUI_API ImDrawList*   GetWindowDrawList();                        // get draw list associated to the current window, to append your own drawing primitives
     IMGUI_API ImVec2        GetWindowPos();                             // get current window position in screen space (IT IS UNLIKELY YOU EVER NEED TO USE THIS. Consider always using GetCursorScreenPos() and GetContentRegionAvail() instead)
     IMGUI_API ImVec2        GetWindowSize();                            // get current window size (IT IS UNLIKELY YOU EVER NEED TO USE THIS. Consider always using GetCursorScreenPos() and GetContentRegionAvail() instead)
     IMGUI_API float         GetWindowWidth();                           // get current window width (IT IS UNLIKELY YOU EVER NEED TO USE THIS). Shortcut for GetWindowSize().x.
     IMGUI_API float         GetWindowHeight();                          // get current window height (IT IS UNLIKELY YOU EVER NEED TO USE THIS). Shortcut for GetWindowSize().y.
+    IMGUI_API bool          IsDragScrolling();                          // Is the user performing a drag scroll action on this window?
+    IMGUI_API bool          IsDragScrollGliding();                      // Is the window gliding after a drag scroll action?
+    IMGUI_API ImVec2        GetDragScrollFlick(float threshold = -1.0f); // Get the flick test for this window. If threshold == -1, the global threshold from io.DragFlickThreshold is used. To pass the test, the drag scroll button must have been just released, and the drag scroll velocity must have absolute value larger than the threshold.
+    IMGUI_API ImVec2        GetDragScrollVelocity();                    // Get the drag scroll velocity.
+    IMGUI_API void          SetDragScrollVelocity(const ImVec2& vel);   // Set the drag scroll velocity. If you're changing this, it's usually to force it to zero (to manually stop any gliding.)
 
     // Window manipulation
     // - Prefer using SetNextXXX functions (before Begin) rather that SetXXX functions (after Begin).
@@ -634,7 +641,7 @@ namespace ImGui
     IMGUI_API bool          Button(const char* label, const ImVec2& size = ImVec2(0, 0));   // button
     IMGUI_API bool          SmallButton(const char* label);                                 // button with (FramePadding.y == 0) to easily embed within text
     IMGUI_API bool          InvisibleButton(const char* str_id, const ImVec2& size, ImGuiButtonFlags flags = 0); // flexible button behavior without the visuals, frequently useful to build custom behaviors using the public api (along with IsItemActive, IsItemHovered, etc.)
-    IMGUI_API bool          ArrowButton(const char* str_id, ImGuiDir dir);                  // square button with an arrow shape
+    IMGUI_API bool          ArrowButton(const char* str_id, ImGuiDir dir, const ImVec2& size = ImVec2(0, 0)); // square button with an arrow shape
     IMGUI_API bool          Checkbox(const char* label, bool* v);
     IMGUI_API bool          CheckboxFlags(const char* label, int* flags, int flags_value);
     IMGUI_API bool          CheckboxFlags(const char* label, unsigned int* flags, unsigned int flags_value);
@@ -1096,7 +1103,7 @@ namespace ImGui
     // - Reminder ImGuiKey enum include access to mouse buttons and gamepad, so key ownership can apply to them.
     // - The return value of SetItemKeyOwner() says if ownership has been requested for the item, which is a shortcut to calling yet non-public TestKeyOwner() function.
     // - Many related features are still in imgui_internal.h. For instance, most IsKeyXXX()/IsMouseXXX() functions have an owner-id-aware version.
-    IMGUI_API bool          SetItemKeyOwner(ImGuiKey key);                                      // Set key owner to last item ID if it is hovered or active. Return true when ownership has been set. Roughly equivalent to 'if (TestKeyOwner(key, GetItemID()) && (IsItemHovered() || IsItemActive())) { SetKeyOwner(key, GetItemID());'. 
+    IMGUI_API bool          SetItemKeyOwner(ImGuiKey key);                                      // Set key owner to last item ID if it is hovered or active. Return true when ownership has been set. Roughly equivalent to 'if (TestKeyOwner(key, GetItemID()) && (IsItemHovered() || IsItemActive())) { SetKeyOwner(key, GetItemID());'.
 
     // Inputs Utilities: Mouse
     // - To refer to a mouse button, you may use named enums in your code e.g. ImGuiMouseButton_Left, ImGuiMouseButton_Right.
@@ -1186,6 +1193,7 @@ enum ImGuiWindowFlags_
     ImGuiWindowFlags_NoNavInputs            = 1 << 16,  // No keyboard/gamepad navigation within the window
     ImGuiWindowFlags_NoNavFocus             = 1 << 17,  // No focusing toward this window with keyboard/gamepad navigation (e.g. skipped by Ctrl+Tab)
     ImGuiWindowFlags_UnsavedDocument        = 1 << 18,  // Display a dot next to the title. When used in a tab/docking context, tab is selected when clicking the X + closure is not assumed (will wait for user to stop submitting the tab). Otherwise closure is assumed when pressing the X, so if you keep submitting the tab may reappear at end of tab bar.
+    ImGuiWindowFlags_NoGlide                = 1 << 19,  // Prevent any gliding when doing drag scrolling: the window stops scrolling instantnly when the mouse button is released.
     ImGuiWindowFlags_NoNav                  = ImGuiWindowFlags_NoNavInputs | ImGuiWindowFlags_NoNavFocus,
     ImGuiWindowFlags_NoDecoration           = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoCollapse,
     ImGuiWindowFlags_NoInputs               = ImGuiWindowFlags_NoMouseInputs | ImGuiWindowFlags_NoNavInputs | ImGuiWindowFlags_NoNavFocus,
@@ -2486,8 +2494,9 @@ struct ImGuiIO
     // Drag scrolling behavior.
     bool        ConfigDragScroll;               // = false          // Dragging with a mouse button will scroll the content.
     ImGuiMouseButton DragScrollButton;          // ImGuiMouseButton_Left // What mouse button is used to detect drag scrolling. See ImGuiConfigFlags_DragScroll.
-    float       DragScrollDecel;                // = 5000.0f        // How much of the scroll speed decelerates, in pixels per second.
-    float       DragScrollMinSpeed;             // = 300.0f         // Minimum kinetic scroll speed, in pixels per second, before the scroll is stopped.
+    float       DragScrollDecel;                // = 5000.0f        // How much of the scroll speed decelerates, in pixels per second per second.
+    float       DragScrollMinSpeed;             // = 120.0f         // Minimum kinetic scroll speed, in pixels per second, before the scroll is stopped.
+    float       DragFlickThreshold;             // = 600.0f        // Minimum drag scroll speed that will be considered a flick.
 
     //------------------------------------------------------------------
     // Debug options
@@ -2849,6 +2858,18 @@ struct ImGuiStorage
     IMGUI_API void      SetFloat(ImGuiID key, float val);
     IMGUI_API void*     GetVoidPtr(ImGuiID key) const; // default_val is NULL
     IMGUI_API void      SetVoidPtr(ImGuiID key, void* val);
+
+    template<typename T, typename U>
+    IMGUI_API T Get(ImGuiID key, U default_val)
+    {
+        return static_cast<T>(GetInt(key, static_cast<int>(default_val)));
+    }
+
+    template<typename T>
+    IMGUI_API void Set(ImGuiID key, T val)
+    {
+        SetInt(key, static_cast<int>(val));
+    }
 
     // - Get***Ref() functions finds pair, insert on demand if missing, return pointer. Useful if you intend to do Get+Set.
     // - References are only valid until a new value is added to the storage. Calling a Set***() function or a Get***Ref() function invalidates the pointer.
@@ -4309,3 +4330,7 @@ typedef ImFontAtlasRect ImFontAtlasCustomRect;
 #endif
 
 #endif // #ifndef IMGUI_DISABLE
+
+// Local Variables:
+// mode: c++
+// End:

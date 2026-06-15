@@ -59,6 +59,8 @@ load_fonts()
 int
 main()
 {
+    std::printf("Started Wii U ImGui Demo\n");
+
     // Briefly initialize the audio system to stop the boot sound.
     AXInit();
     AXQuit();
