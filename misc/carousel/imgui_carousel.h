@@ -175,7 +175,7 @@ namespace ImGui
 
         // NOTE: detail namespace copied from imgui_raii.h
 
-        namespace detail {
+        namespace carousel_detail {
 
             struct Immovable {
 
@@ -209,16 +209,16 @@ namespace ImGui
 
             }; // class Conditional
 
-        } // namespace detail
+        } // namespace carousel_detail
 
 
-        struct Carousel : detail::Conditional {
+        struct Carousel : carousel_detail::Conditional {
 
             Carousel(const auto& str_id,
                      const ImVec2& page_size,
                      const ImGuiCarouselSpecs& specs = {})
                 noexcept :
-                detail::Conditional{BeginCarousel(str_id, page_size, specs)}
+                carousel_detail::Conditional{BeginCarousel(str_id, page_size, specs)}
             {}
 
             ~Carousel()
