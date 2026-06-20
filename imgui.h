@@ -2860,13 +2860,13 @@ struct ImGuiStorage
     IMGUI_API void      SetVoidPtr(ImGuiID key, void* val);
 
     template<typename T, typename U>
-    IMGUI_API T Get(ImGuiID key, U default_val)
+    T Get(ImGuiID key, U default_val)
     {
         return static_cast<T>(GetInt(key, static_cast<int>(default_val)));
     }
 
     template<typename T>
-    IMGUI_API void Set(ImGuiID key, T val)
+    void Set(ImGuiID key, T val)
     {
         SetInt(key, static_cast<int>(val));
     }
