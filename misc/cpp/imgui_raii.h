@@ -54,7 +54,6 @@ namespace ImGui::RAII {
     } // namespace detail
 
 
-
     struct Child : detail::Conditional {
 
         explicit

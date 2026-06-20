@@ -1,68 +1,84 @@
+/*
+ * Carousel widget for ImGui.
+ *
+ * Copyright (C) 2026  Daniel K. O. <dkosmari>
+ * SPDX-License-Identifier: MIT
+ */
+
 #include <cmath>
-#include <cstdio>
 
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include "imgui_carousel.h"
 
-enum class CarouselSnapMode : int {
-    jump,
-    flick,
-    nudge,
-};
 
-enum class CarouselSnapState : int {
-    idle,
-    started,
-    snapping,
-};
+namespace {
 
-template<typename Pt>
-Pt
-cubic_hermite_spline(const Pt& p0,
-                     const Pt& p1,
-                     const Pt& d0,
-                     const Pt& d1,
-                     float t)
-{
-    if (t < 0)
-        return p0;
-    if (t > 1)
-        return p1;
-    Pt a =  2 * p0 - 2 * p1 +     d0 + d1;
-    Pt b = -3 * p0 + 3 * p1 - 2 * d0 - d1;
-    Pt c =                        d0;
-    Pt d =      p0;
-    return a * t*t*t + b * t*t + c * t + d;
-}
+    enum class CarouselSnapMode : int {
+        jump,
+        flick,
+        nudge,
+    };
 
-template<typename Pt>
-Pt
-cubic_hermite_spline_deriv(const Pt& p0,
-                           const Pt& p1,
-                           const Pt& d0,
-                           const Pt& d1,
-                           float t)
-{
-    if (t < 0)
-        return d0;
-    if (t > 1)
-        return d1;
-    Pt a =  2 * p0 - 2 * p1 +     d0 + d1;
-    Pt b = -3 * p0 + 3 * p1 - 2 * d0 - d1;
-    Pt c =                        d0;
-    return 3 * a * t*t + 2 * b * t + c;
-}
 
-template<typename T>
-T
-clamp(T x, T min, T max)
-{
-    if (x < min)
-        return min;
-    if (x > max)
-        return max;
-    return x;
-}
+    enum class CarouselSnapState : int {
+        idle,
+        started,
+        snapping,
+    };
+
+
+    template<typename Pt>
+    Pt
+    cubic_hermite_spline(const Pt& p0,
+                         const Pt& p1,
+                         const Pt& d0,
+                         const Pt& d1,
+                         float t)
+    {
+        if (t < 0)
+            return p0;
+        if (t > 1)
+            return p1;
+        Pt a =  2 * p0 - 2 * p1 +     d0 + d1;
+        Pt b = -3 * p0 + 3 * p1 - 2 * d0 - d1;
+        Pt c =                        d0;
+        Pt d =      p0;
+        return a * t*t*t + b * t*t + c * t + d;
+    }
+
+
+    template<typename Pt>
+    Pt
+    cubic_hermite_spline_deriv(const Pt& p0,
+                               const Pt& p1,
+                               const Pt& d0,
+                               const Pt& d1,
+                               float t)
+    {
+        if (t < 0)
+            return d0;
+        if (t > 1)
+            return d1;
+        Pt a =  2 * p0 - 2 * p1 +     d0 + d1;
+        Pt b = -3 * p0 + 3 * p1 - 2 * d0 - d1;
+        Pt c =                        d0;
+        return 3 * a * t*t + 2 * b * t + c;
+    }
+
+
+    template<typename T>
+    T
+    clamp(T x, T min, T max)
+    {
+        if (x < min)
+            return min;
+        if (x > max)
+            return max;
+        return x;
+    }
+
+} // namespace
+
 
 bool
 ImGui::BeginCarousel(const char *str_id,
@@ -207,7 +223,6 @@ ImGui::EndCarousel()
         snap_start_velocity = {0, 0};
         if (flick.x != 0)
         {
-            // std::printf("flick.x: %f\n", flick.x);
             snap_mode = CarouselSnapMode::flick;
             snap_state = CarouselSnapState::started;
             snap_start_velocity.x = flick.x;
@@ -321,8 +336,6 @@ ImGui::CarouselGetColumns()
     ImGuiStorage* storage = GetStateStorage();
     float step_size_x = storage->GetFloat(GetID("step_size.x"));
     float max_scroll_x = GetScrollMaxX();
-    // std::printf("step_size_x = %f\n", step_size_x);
-    // std::printf("max_scroll_x = %f\n", max_scroll_x);
     int columns = static_cast<int>(step_size_x > 0
                                    ? 1.0f + std::floor(max_scroll_x / step_size_x)
                                    : 1.0f);
@@ -343,14 +356,36 @@ ImGui::CarouselGetRows()
 }
 
 
+std::pair<int, int>
+ImGui::CarouselGetColumnsRows()
+{
+    ImGuiStorage* storage = GetStateStorage();
+    ImVec2 step_size{
+        storage->GetFloat(GetID("step_size.x")),
+        storage->GetFloat(GetID("step_size.y"))
+    };
+    ImVec2 max_scroll{
+        GetScrollMaxX(),
+        GetScrollMaxY()
+    };
+    int columns = static_cast<int>(step_size.x > 0
+                                   ? 1.0f + std::floor(max_scroll.x / step_size.x)
+                                   : 1.0f);
+    int rows = static_cast<int>(step_size.y > 0
+                                ? 1.0f + std::floor(max_scroll.y / step_size.y)
+                                : 1.0f);
+    return { columns, rows };
+}
+
+
 int
 ImGui::CarouselGetPageX()
 {
     ImGuiStorage* storage = GetStateStorage();
     float step_size_x = storage->GetFloat(GetID("step_size.x"));
-    float current_position_x = GetScrollX();
-    int current_page_x = std::lround(current_position_x / step_size_x);
-    return current_page_x;
+    float position_x = GetScrollX();
+    int page_x = std::lround(position_x / step_size_x);
+    return page_x;
 }
 
 
@@ -359,9 +394,27 @@ ImGui::CarouselGetPageY()
 {
     ImGuiStorage* storage = GetStateStorage();
     float step_size_y = storage->GetFloat(GetID("step_size.y"));
-    float current_position_y = GetScrollY();
-    int current_page_y = std::lround(current_position_y / step_size_y);
-    return current_page_y;
+    float position_y = GetScrollY();
+    int page_y = std::lround(position_y / step_size_y);
+    return page_y;
+}
+
+
+std::pair<int, int>
+ImGui::CarouselGetPage()
+{
+    ImGuiStorage* storage = GetStateStorage();
+    ImVec2 step_size{
+        storage->GetFloat(GetID("step_size.x")),
+        storage->GetFloat(GetID("step_size.y"))
+    };
+    ImVec2 position{
+        GetScrollX(),
+        GetScrollY()
+    };
+    int page_x = std::lround(position.x / step_size.x);
+    int page_y = std::lround(position.y / step_size.y);
+    return { page_x, page_y };
 }
 
 
@@ -390,6 +443,28 @@ ImGui::CarouselJumpPageY(int page_y)
     // Make sure the jump starts with the current velocity.
     float current_velocity_y = storage->GetFloat(GetID("current_velocity.y"));
     storage->SetFloat(GetID("snap_start_velocity.y"), current_velocity_y);
+    storage->Set<CarouselSnapMode>(GetID("snap_mode"), CarouselSnapMode::jump);
+    storage->Set<CarouselSnapState>(GetID("snap_state"), CarouselSnapState::started);
+}
+
+
+void
+ImGui::CarouselJumpPage(int page_x,
+                        int page_y)
+{
+    ImGuiStorage* storage = GetStateStorage();
+    auto extents = CarouselGetColumnsRows();
+    page_x = clamp(page_x, 0, std::get<0>(extents));
+    page_y = clamp(page_y, 0, std::get<1>(extents));
+    storage->SetInt(GetID("target_page_x"), page_x);
+    storage->SetInt(GetID("target_page_y"), page_y);
+    // Make sure the jump starts with the current velocity.
+    ImVec2 current_velocity{
+        storage->GetFloat(GetID("current_velocity.x")),
+        storage->GetFloat(GetID("current_velocity.y"))
+    };
+    storage->SetFloat(GetID("snap_start_velocity.x"), current_velocity.x);
+    storage->SetFloat(GetID("snap_start_velocity.y"), current_velocity.y);
     storage->Set<CarouselSnapMode>(GetID("snap_mode"), CarouselSnapMode::jump);
     storage->Set<CarouselSnapState>(GetID("snap_state"), CarouselSnapState::started);
 }
@@ -442,4 +517,13 @@ ImGui::CarouselJumpPageDown()
     int rows = CarouselGetRows();
     if (target_page_y + 1 < rows)
         CarouselJumpPageY(target_page_y + 1);
+}
+
+
+bool
+ImGui::BeginCarousel(const std::string& str_id,
+                     const ImVec2& page_size,
+                     const ImGuiCarouselSpecs& specs)
+{
+    return BeginCarousel(str_id.data(), page_size, specs);
 }

@@ -1,9 +1,19 @@
+// -*- mode: c++ -*-
+/*
+ * Carousel widget for ImGui.
+ *
+ * Copyright (C) 2026  Daniel K. O. <dkosmari>
+ * SPDX-License-Identifier: MIT
+ */
+
 #ifndef IMGUI_CAROUSEL_H
 #define IMGUI_CAROUSEL_H
 
 #ifndef IMGUI_DISABLE
 
-// Carousel widget implementation.
+#include <string>
+#include <utility>
+
 #include <imgui.h>
 
 /**
@@ -63,6 +73,16 @@ namespace ImGui
     CarouselGetRows();
 
     /**
+     * Return the number of horizontal and vertical pages needed to show all content.
+     *
+     * This is slightly more efficient than calling both CarouselGetColumns() and
+     * CarouselGetRows().
+     */
+    IMGUI_API
+    std::pair<int, int>
+    CarouselGetColumnsRows();
+
+    /**
      * Return the current horizontal page.
      */
     IMGUI_API
@@ -77,6 +97,16 @@ namespace ImGui
     CarouselGetPageY();
 
     /**
+     * Return both horizontal and vertical page.
+     *
+     * This is slightly more efficient than calling both CarouselGetPageX() and
+     * CarouselGetPageY().
+     */
+    IMGUI_API
+    std::pair<int, int>
+    CarouselGetPage();
+
+    /**
      * Jump to a specific horizontal page.
      */
     IMGUI_API
@@ -89,6 +119,16 @@ namespace ImGui
     IMGUI_API
     void
     CarouselJumpPageY(int page_y);
+
+    /**
+     * Jump to a specific horizontal and vertical page.
+     *
+     * This is slightly more efficient than calling both CarouselJumpPageX() and
+     * CarouselJumpPageY().
+     */
+    IMGUI_API
+    void
+    CarouselJumpPage(int page_x, int page_y);
 
     /**
      * Jump one page to the left.
@@ -118,12 +158,60 @@ namespace ImGui
     void
     CarouselJumpPageDown();
 
+
+    // C++ overloads
+
+    /// Overload for std::string.
+    IMGUI_API
+    bool
+    BeginCarousel(const std::string& str_id,
+                  const ImVec2& page_size,
+                  const ImGuiCarouselSpecs& specs = {});
+
+#if __cplusplus >= 202002L // C++20
+
+    // RAII wrapper
+    namespace RAII {
+
+        // NOTE: should match imgui_raii.h
+
+        namespace detail {
+
+            struct Immovable {
+
+                constexpr
+                Immovable() noexcept = default;
+
+                Immovable(Immovable&&) = delete;
+
+            }; // struct Immovable
+
+        } // namespace detail
+
+
+        struct Carousel : detail::Immovable {
+
+            Carousel(const auto& str_id,
+                     const ImVec2& page_size,
+                     const ImGuiCarouselSpecs& specs = {})
+                noexcept :
+                detail::Conditional{BeginCarousel(str_id, page_size, specs)}
+            {}
+
+            ~Carousel()
+                noexcept
+            {
+                EndCarousel();
+            }
+
+        }; // struct Carousel
+
+    } // namespace RAII
+
+#endif // C++20
+
 } // namespace ImGui
 
 #endif // IMGUI_DISABLE
 
 #endif
-
-/* Local Variables: */
-/* mode: c++ */
-/* End: */
