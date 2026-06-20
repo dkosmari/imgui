@@ -173,7 +173,7 @@ namespace ImGui
     // RAII wrapper
     namespace RAII {
 
-        // NOTE: should match imgui_raii.h
+        // NOTE: detail namespace copied from imgui_raii.h
 
         namespace detail {
 
@@ -186,10 +186,33 @@ namespace ImGui
 
             }; // struct Immovable
 
+
+            class Conditional : Immovable {
+
+            protected:
+
+                const bool status;
+
+                Conditional(bool s)
+                    noexcept :
+                    status{s}
+                {}
+
+            public:
+
+                explicit
+                operator bool()
+                    const noexcept
+                {
+                    return status;
+                }
+
+            }; // class Conditional
+
         } // namespace detail
 
 
-        struct Carousel : detail::Immovable {
+        struct Carousel : detail::Conditional {
 
             Carousel(const auto& str_id,
                      const ImVec2& page_size,
@@ -201,7 +224,8 @@ namespace ImGui
             ~Carousel()
                 noexcept
             {
-                EndCarousel();
+                if (status)
+                    EndCarousel();
             }
 
         }; // struct Carousel
