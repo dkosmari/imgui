@@ -25,7 +25,8 @@ This fork is kept up-to-date with ImGui releases, with a number of patches and a
     - `ImGui::IsWindowHorizontalScrollbarActive()`
     - `ImGui::IsWindowVerticalScrollbarActive()`
     - `ImGui::SetDragScrollVelocity()`
-  Also a Carousel widget in `misc/carousel`.
+
+- Also a Carousel widget in `misc/carousel`.
 
 - Wii U backend, by @GaryOderNichts.
 
