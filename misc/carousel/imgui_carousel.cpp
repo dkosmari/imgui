@@ -220,12 +220,14 @@ ImGui::EndCarousel()
     if (flickable)
     {
         ImVec2 flick = GetDragScrollFlick();
-        snap_start_velocity = {0, 0};
+        bool got_new_snap_start_velocity = false;
+        ImVec2 new_snap_start_velocity = {0, 0};
         if (flick.x != 0)
         {
             snap_mode = CarouselSnapMode::flick;
             snap_state = CarouselSnapState::started;
-            snap_start_velocity.x = flick.x;
+            got_new_snap_start_velocity = true;
+            new_snap_start_velocity.x = flick.x;
             target_page_x = current_page_x;
             if (flick.x < 0 && target_page_x > 0)
                 --target_page_x;
@@ -236,13 +238,16 @@ ImGui::EndCarousel()
         {
             snap_mode = CarouselSnapMode::flick;
             snap_state = CarouselSnapState::started;
-            snap_start_velocity.y = flick.y;
+            got_new_snap_start_velocity = true;
+            new_snap_start_velocity.y = flick.y;
             target_page_y = current_page_y;
             if (flick.y < 0 && target_page_y > 0)
                 --target_page_y;
             if (flick.y > 0 && target_page_y < rows - 1)
                 ++target_page_y;
         }
+        if (got_new_snap_start_velocity)
+            snap_start_velocity = new_snap_start_velocity;
     }
 
 
@@ -258,15 +263,15 @@ ImGui::EndCarousel()
 
     if (snap_state == CarouselSnapState::snapping)
     {
-        ImVec2 snap_target_position;
-        snap_target_position.x = target_page_x * step_size.x;
-        snap_target_position.y = target_page_y * step_size.y;
+        ImVec2 snap_finish_position;
+        snap_finish_position.x = target_page_x * step_size.x;
+        snap_finish_position.y = target_page_y * step_size.y;
         SetDragScrollVelocity({0, 0});
-        snap_time += io.DeltaTime;
         // Interpolate between start_pos and target_pos, using Hermite
         // interpolation.
-        float snap_duration = storage->GetFloat(GetID("snap_duration"), 0.5f);
+        float snap_duration = storage->GetFloat(GetID("snap_duration"), 0.25f);
         float t = snap_time / snap_duration;
+        snap_time += io.DeltaTime;
         /*
          * Prevent overshooting.
          *
@@ -274,28 +279,23 @@ ImGui::EndCarousel()
          * Interpolation". SIAM Journal on Numerical Analysis. 17 (2). SIAM:
          * 238–246. doi:10.1137/0717021.
          */
-        ImVec2 secant_slope = snap_target_position - snap_start_position;
+        const ImVec2 snap_finish_velocity{0, 0};
+        ImVec2 secant_slope = snap_finish_position - snap_start_position;
         if (std::signbit(secant_slope.x) == std::signbit(snap_start_velocity.x)
             && snap_start_velocity.x / secant_slope.x > 3)
-        {
-            // printf("dampening snap_start_velocity.x: %f -> %f\n",
-            //        snap_start_velocity.x,
-            //        3 * secant_slope.x);
             snap_start_velocity.x = 3 * secant_slope.x;
-        }
         if (std::signbit(secant_slope.y) == std::signbit(snap_start_velocity.y)
             && snap_start_velocity.y / secant_slope.y > 3)
             snap_start_velocity.y = 3 * secant_slope.y;
-
         current_position = cubic_hermite_spline(snap_start_position,
-                                                snap_target_position,
+                                                snap_finish_position,
                                                 snap_start_velocity,
-                                                {0, 0},
+                                                snap_finish_velocity,
                                                 t);
         current_velocity = cubic_hermite_spline_deriv(snap_start_position,
-                                                      snap_target_position,
+                                                      snap_finish_position,
                                                       snap_start_velocity,
-                                                      {0, 0},
+                                                      snap_finish_velocity,
                                                       t);
 
         SetScrollX(current_position.x);
