@@ -201,15 +201,15 @@ ImGui::EndCarousel()
     {
         target_page_x = current_page_x;
         target_page_y = current_page_y;
-        ImVec2 snap_target_position;
-        snap_target_position.x = target_page_x * step_size.x;
-        snap_target_position.y = target_page_y * step_size.y;
+        ImVec2 snap_finish_position;
+        snap_finish_position.x = target_page_x * step_size.x;
+        snap_finish_position.y = target_page_y * step_size.y;
         // If user is not manipulating the scroll position, start the scroll snap.
         if (snap_state == CarouselSnapState::idle
             && !IsDragScrolling()
             && !IsDragScrollGliding()
             && !scrollbar_active
-            && snap_target_position != current_position)
+            && snap_finish_position != current_position)
         {
             snap_state = CarouselSnapState::started;
             snap_start_velocity = {};
@@ -305,7 +305,7 @@ ImGui::EndCarousel()
         if (snap_time >= snap_duration)
         {
             snap_state = CarouselSnapState::idle;
-            current_position = snap_target_position;
+            current_position = snap_finish_position;
             current_velocity = {0, 0};
         }
     }
