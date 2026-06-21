@@ -140,8 +140,6 @@ ImGui::EndCarousel()
         return;
     }
 
-    const ImGuiIO& io = GetIO();
-
     ImGuiStorage* storage = GetStateStorage();
 
     ImVec2 step_size;
@@ -271,7 +269,6 @@ ImGui::EndCarousel()
         // interpolation.
         float snap_duration = storage->GetFloat(GetID("snap_duration"), 0.25f);
         float t = snap_time / snap_duration;
-        snap_time += io.DeltaTime;
         /*
          * Prevent overshooting.
          *
@@ -307,6 +304,11 @@ ImGui::EndCarousel()
             snap_state = CarouselSnapState::idle;
             current_position = snap_finish_position;
             current_velocity = {0, 0};
+        }
+        else
+        {
+            const ImGuiIO& io = GetIO();
+            snap_time += io.DeltaTime;
         }
     }
 
