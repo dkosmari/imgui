@@ -186,14 +186,14 @@ ImGui::EndCarousel()
     {
         snap_mode = CarouselSnapMode::nudge;
         snap_state = CarouselSnapState::idle;
+        current_velocity = {};
     }
-    else if (IsDragScrolling() && snap_mode != CarouselSnapMode::jump)
+    else if (IsDragScrolling())
     {
         snap_mode = CarouselSnapMode::nudge;
         snap_state = CarouselSnapState::idle;
+        current_velocity = GetDragScrollVelocity();
     }
-
-    current_velocity = GetDragScrollVelocity();
 
     if (snap_mode == CarouselSnapMode::nudge)
     {
