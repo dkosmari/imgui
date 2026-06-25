@@ -365,8 +365,8 @@ void ImGui::TextAlignedV(float align_x, float size_x, const char* fmt, va_list a
     ImVec2 pos(window->DC.CursorPos.x, window->DC.CursorPos.y + window->DC.CurrLineTextBaseOffset);
     ImVec2 pos_max(pos.x + size_x, window->ClipRect.Max.y);
     ImVec2 size(ImMin(size_x, text_size.x), text_size.y);
-    window->DC.CursorMaxPos.x = ImMax(window->DC.CursorMaxPos.x, pos.x + text_size.x);
-    window->DC.IdealMaxPos.x = ImMax(window->DC.IdealMaxPos.x, pos.x + text_size.x);
+    window->DC.CursorMaxPos.x = ImMax(window->DC.CursorMaxPos.x, pos.x + size.x);
+    window->DC.IdealMaxPos.x = ImMax(window->DC.IdealMaxPos.x, pos.x + size.x);
     if (align_x > 0.0f && text_size.x < size_x)
         pos.x += ImTrunc((size_x - text_size.x) * align_x);
     RenderTextEllipsis(window->DrawList, pos, pos_max, pos_max.x, text, text_end, &text_size);
