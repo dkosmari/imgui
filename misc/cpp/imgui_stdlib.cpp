@@ -101,6 +101,23 @@ namespace ImGui {
     } // namespace
 
 
+    const ImGuiPayload*
+    AcceptDragDropPayload(const std::string& type,
+                          ImGuiDragDropFlags flags)
+    {
+        return AcceptDragDropPayload(type.data(), flags);
+    }
+
+
+    bool
+    ArrowButton(const std::string& str_id,
+                ImGuiDir dir,
+                const ImVec2& size)
+    {
+        return ArrowButton(str_id.data(), dir, size);
+    }
+
+
     bool
     Begin(const std::string& name,
           bool* p_open,
@@ -129,6 +146,14 @@ namespace ImGui {
                ImGuiComboFlags flags)
     {
         return BeginCombo(label.data(), preview.data(), flags);
+    }
+
+
+    bool
+    BeginListBox(const std::string& label,
+                 const ImVec2& size)
+    {
+        return BeginListBox(label.data(), size);
     }
 
 
@@ -213,6 +238,13 @@ namespace ImGui {
     }
 
 
+    void
+    BulletText(const std::string& text)
+    {
+        BulletText("%s", text.data());
+    }
+
+
     bool
     Button(const std::string& label,
            const ImVec2& size)
@@ -292,6 +324,89 @@ namespace ImGui {
     INSTANTIATE(char32_t);
 
 #undef INSTANTIATE
+
+
+    bool
+    CollapsingHeader(const std::string& label,
+                     ImGuiTreeNodeFlags flags)
+    {
+        return CollapsingHeader(label.data(), flags);
+    }
+
+
+    bool
+    CollapsingHeader(const std::string& label,
+                     bool* p_visible,
+                     ImGuiTreeNodeFlags flags)
+    {
+        return CollapsingHeader(label.data(), p_visible, flags);
+    }
+
+
+    bool
+    ColorButton(const std::string& desc_id,
+                const ImVec4& col,
+                ImGuiColorEditFlags flags,
+                const ImVec2& size)
+    {
+        return ColorButton(desc_id.data(), col, flags, size);
+    }
+
+
+    template<>
+    bool
+    ColorEdit<3>(const std::string& label,
+              float col[3],
+              ImGuiColorEditFlags flags)
+    {
+        return ColorEdit3(label.data(), col, flags);
+    }
+
+
+    template<>
+    bool
+    ColorEdit<4>(const std::string& label,
+              float col[4],
+              ImGuiColorEditFlags flags)
+    {
+        return ColorEdit4(label.data(), col, flags);
+    }
+
+
+    template<>
+    bool
+    ColorPicker<3>(const std::string& label,
+                   float col[3],
+                   ImGuiColorEditFlags flags)
+    {
+        return ColorPicker3(label.data(), col, flags);
+    }
+
+
+    template<>
+    bool
+    ColorPicker<4>(const std::string& label,
+                   float col[4],
+                   ImGuiColorEditFlags flags)
+    {
+        return ColorPicker4(label.data(), col, flags);
+    }
+
+
+#ifndef IMGUI_DISABLE_DEBUG_TOOLS
+    void
+    DebugLog(const std::string& msg)
+    {
+        DebugLog("%s", msg.data());
+    }
+#endif
+
+
+    void
+    DebugTextEncoding(const std::string& text)
+    {
+        DebugTextEncoding(text.data());
+    }
 
 
     template<concepts::arithmetic T>
@@ -411,6 +526,32 @@ namespace ImGui {
 #undef INSTANTIATE
 
 
+    ImGuiID
+    GetID(const std::string& str)
+    {
+        return GetID(str.data(), str.data() + str.size());
+    }
+
+
+    bool
+    ImageButton(const std::string& str_id,
+                ImTextureRef tex_ref,
+                const ImVec2& image_size,
+                const ImVec2& uv0,
+                const ImVec2& uv1,
+                const ImVec4& bg_col,
+                const ImVec4& tint_col)
+    {
+        return ImageButton(str_id.data(),
+                           tex_ref,
+                           image_size,
+                           uv0,
+                           uv1,
+                           bg_col,
+                           tint_col);
+    }
+
+
     template<concepts::arithmetic T>
     bool
     Input(const std::string& label,
@@ -528,7 +669,7 @@ namespace ImGui {
 
             struct Data {
                 std::string* str;
-                InputTextFunction func;
+                const InputTextFunction* func;
             };
 
             int
@@ -542,8 +683,8 @@ namespace ImGui {
                     IM_ASSERT(data->Buf == str.data());
                     str.resize(data->BufTextLen);
                     data->Buf = str.data();
-                } else if (user_data->func)
-                    user_data->func(data);
+                } else if (*user_data->func)
+                    (*user_data->func)(data);
                 return 0;
             }
 
@@ -556,12 +697,12 @@ namespace ImGui {
     InputText(const std::string& label,
               std::string& value,
               ImGuiInputTextFlags flags,
-              InputTextFunction func)
+              const InputTextFunction& func)
     {
         flags |= ImGuiInputTextFlags_CallbackResize;
         InputTextHelper::Data data;
         data.str = &value;
-        data.func = std::move(func);
+        data.func = &func;
         return InputText(label.data(),
                          value.data(),
                          value.capacity() + 1,
@@ -575,9 +716,9 @@ namespace ImGui {
     InputText(const std::string& label,
               std::string* value,
               ImGuiInputTextFlags flags,
-              InputTextFunction func)
+              const InputTextFunction& func)
     {
-        return InputText(label, *value, flags, std::move(func));
+        return InputText(label, *value, flags, func);
     }
 
 
@@ -586,12 +727,12 @@ namespace ImGui {
                        std::string& value,
                        const ImVec2& size,
                        ImGuiInputTextFlags flags,
-                       InputTextFunction func)
+                       const InputTextFunction& func)
     {
         flags |= ImGuiInputTextFlags_CallbackResize;
         InputTextHelper::Data data;
         data.str = &value;
-        data.func = std::move(func);
+        data.func = &func;
         return InputTextMultiline(label.data(),
                                   value.data(),
                                   value.capacity() + 1,
@@ -607,9 +748,9 @@ namespace ImGui {
                        std::string* value,
                        const ImVec2& size,
                        ImGuiInputTextFlags flags,
-                       InputTextFunction func)
+                       const InputTextFunction& func)
     {
-        return InputTextMultiline(label, *value, size, flags, std::move(func));
+        return InputTextMultiline(label, *value, size, flags, func);
     }
 
 
@@ -618,12 +759,12 @@ namespace ImGui {
                       const std::string& hint,
                       std::string& value,
                       ImGuiInputTextFlags flags,
-                      InputTextFunction func)
+                      const InputTextFunction& func)
     {
         flags |= ImGuiInputTextFlags_CallbackResize;
         InputTextHelper::Data data;
         data.str = &value;
-        data.func = std::move(func);
+        data.func = &func;
         return InputTextWithHint(label.data(),
                                  hint.data(),
                                  value.data(),
@@ -639,9 +780,18 @@ namespace ImGui {
                       const std::string& hint,
                       std::string* value,
                       ImGuiInputTextFlags flags,
-                      InputTextFunction func)
+                      const InputTextFunction& func)
     {
-        return InputTextWithHint(label, hint, *value, flags, std::move(func));
+        return InputTextWithHint(label, hint, *value, flags, func);
+    }
+
+
+    bool
+    InvisibleButton(const std::string& str_id,
+                    const ImVec2& size,
+                    ImGuiButtonFlags flags)
+    {
+        return InvisibleButton(str_id.data(), size, flags);
     }
 
 
@@ -654,10 +804,163 @@ namespace ImGui {
 
 
     void
+    LabelText(const std::string& label,
+              const std::string& text)
+    {
+        LabelText(label.data(), "%s", text.data());
+    }
+
+
+    bool
+    ListBox(const std::string& label,
+            std::size_t& current_item,
+            const std::vector<std::string>& items,
+            int height_in_items)
+    {
+        std::vector<const char*> c_items;
+        c_items.reserve(items.size());
+        for (const auto& item : items)
+            c_items.push_back(item.data());
+        int c_current_item = current_item;
+        bool result = ListBox(label.data(),
+                              &c_current_item,
+                              c_items.data(),
+                              c_items.size(),
+                              height_in_items);
+        current_item = c_current_item;
+        return result;
+    }
+
+
+    namespace {
+
+        namespace ListBoxHelper {
+
+            struct Context {
+                const ListBoxGetterFunction* getter = nullptr;
+                std::string last_result = {};
+            };
+
+            const char*
+            Getter(void* user_data,
+                   int idx_)
+            {
+                auto ctx = reinterpret_cast<Context*>(user_data);
+                std::size_t idx = idx_;
+                const char* result = nullptr;
+                try {
+                    if (*ctx->getter) {
+                        ctx->last_result = (*ctx->getter)(idx);
+                        result = ctx->last_result.data();
+                    }
+                }
+                catch (std::exception& e) {
+                    IMGUI_DEBUG_LOG("leaked an exception: %s", e.what());
+                }
+                return result;
+            }
+
+        } // namespace ListBoxHelper
+
+    } // namespace
+
+
+    bool
+    ListBox(const std::string& label,
+            int& current_item,
+            const ListBoxGetterFunction& getter,
+            std::size_t items_count,
+            int height_in_items)
+    {
+        int c_current_item = current_item;
+        ListBoxHelper::Context ctx{&getter};
+        bool result = ListBox(label.data(),
+                              &c_current_item,
+                              ListBoxHelper::Getter,
+                              &ctx,
+                              items_count,
+                              height_in_items);
+        current_item = c_current_item;
+        return result;
+    }
+
+    void
+    LoadIniSettingsFromDisk(const std::filesystem::path& ini_filename)
+    {
+        LoadIniSettingsFromDisk(ini_filename.c_str());
+    }
+
+
+    void
+    LoadIniSettingsFromMemory(const std::string& ini)
+    {
+        LoadIniSettingsFromMemory(ini.data(), ini.size());
+    }
+
+
+    void
+    LogText(const std::string& text)
+    {
+        LogText("%s", text.data());
+    }
+
+
+    void
+    LogToFile(int auto_open_depth,
+              const std::filesystem::path& filename)
+    {
+        LogToFile(auto_open_depth, filename.c_str());
+    }
+
+
+    bool
+    MenuItem(const std::string& label,
+             const std::string& shortcut,
+             bool selected,
+             bool enabled)
+    {
+        return MenuItem(label.data(),
+                        shortcut.empty() ? nullptr : shortcut.data(),
+                        selected,
+                        enabled);
+    }
+
+
+    bool
+    MenuItem(const std::string& label,
+             const std::string& shortcut,
+             bool* p_selected,
+             bool enabled)
+    {
+        return MenuItem(label.data(),
+                        shortcut.empty() ? nullptr : shortcut.data(),
+                        p_selected,
+                        enabled);
+    }
+
+
+    void
     OpenPopup(const std::string& str_id,
               ImGuiPopupFlags popup_flags)
     {
         OpenPopup(str_id.data(), popup_flags);
+    }
+
+
+    void
+    OpenPopupOnItemClick(const std::string& str_id,
+                         ImGuiPopupFlags popup_flags)
+    {
+        OpenPopupOnItemClick(str_id.empty() ? nullptr : str_id.data(), popup_flags);
+    }
+
+
+    void
+    ProgressBar(float fraction,
+                const ImVec2& size_arg,
+                const std::string& overlay)
+    {
+        ProgressBar(fraction, size_arg, overlay.data());
     }
 
 
@@ -668,18 +971,27 @@ namespace ImGui {
     }
 
 
-    void
-    PushID(std::string_view id)
-    {
-        PushID(id.data(), id.data() + id.size());
-    }
-
-
     bool
     RadioButton(const std::string& label,
                 bool active)
     {
         return RadioButton(label.data(), active);
+    }
+
+
+    void
+    SaveIniSettingsToDisk(const std::filesystem::path& ini_filename)
+    {
+        SaveIniSettingsToDisk(ini_filename.c_str());
+    }
+
+
+    std::string
+    SaveIniSettingsToString()
+    {
+        std::size_t size;
+        const char* str = SaveIniSettingsToMemory(&size);
+        return std::string(str, size);
     }
 
 
@@ -696,10 +1008,27 @@ namespace ImGui {
     }
 
 
+    bool
+    Selectable(const std::string& label,
+               bool* p_selected,
+               ImGuiSelectableFlags flags,
+               const ImVec2& size)
+    {
+        return Selectable(label.data(), p_selected, flags, size);
+    }
+
+
     void
     SeparatorText(const std::string& label)
     {
         SeparatorText(label.data());
+    }
+
+
+    void
+    SetClipboardText(const std::string& text)
+    {
+        SetClipboardText(text.data());
     }
 
 
@@ -849,6 +1178,13 @@ namespace ImGui {
 
 
     bool
+    SmallButton(const std::string& label)
+    {
+        return SmallButton(label.data());
+    }
+
+
+    bool
     TabItemButton(const std::string& label,
                   ImGuiTabItemFlags flags)
     {
@@ -857,9 +1193,42 @@ namespace ImGui {
 
 
     void
+    TableSetupColumn(const std::string& label,
+                     ImGuiTableColumnFlags flags,
+                     float init_width_or_weight,
+                     ImGuiID user_id)
+    {
+        TableSetupColumn(label.data(), flags, init_width_or_weight, user_id);
+    }
+
+
+    void
     Text(const std::string& text)
     {
-        return Text("%s", text.data());
+        Text("%s", text.data());
+    }
+
+
+    void
+    TextAligned(float align,
+                float width,
+                const std::string& text)
+    {
+        TextAligned(align, width, "%s", text.data());
+    }
+
+
+    void
+    TextColored(const ImVec4& col, const std::string& text)
+    {
+        TextColored(col, "%s", text.data());
+    }
+
+
+    void
+    TextDisabled(const std::string& text)
+    {
+        TextDisabled("%s", text.data());
     }
 
 
@@ -904,6 +1273,62 @@ namespace ImGui {
     to_string(ImGuiCol_ color)
     {
         return GetStyleColorName(color);
+    }
+
+
+    bool
+    TreeNode(const std::string& label)
+    {
+        return TreeNode(label.data());
+    }
+
+
+    bool
+    TreeNode(const std::string& str_id,
+             const std::string& label)
+    {
+        return TreeNode(str_id.data(), "%s", label.data());
+    }
+
+
+    bool
+    TreeNode(const void* ptr_id,
+             const std::string& label)
+    {
+        return TreeNode(ptr_id, "%s", label.data());
+    }
+
+
+    bool
+    TreeNodeEx(const std::string& label,
+               ImGuiTreeNodeFlags flags)
+    {
+        return TreeNodeEx(label.data(), flags);
+    }
+
+
+    bool
+    TreeNodeEx(const std::string& str_id,
+               ImGuiTreeNodeFlags flags,
+               const std::string& label)
+    {
+        return TreeNodeEx(str_id.data(), flags, "%s", label.data());
+    }
+
+
+    bool
+    TreeNodeEx(const void* ptr_id,
+               ImGuiTreeNodeFlags flags,
+               const std::string& label)
+    {
+        return TreeNodeEx(ptr_id, flags, "%s", label.data());
+    }
+
+
+    void
+    TreePush(const std::string& str_id)
+    {
+        return TreePush(str_id.data());
     }
 
 

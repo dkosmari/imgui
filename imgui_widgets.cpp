@@ -340,20 +340,20 @@ void ImGui::TextWrappedV(const char* fmt, va_list args)
         PopTextWrapPos();
 }
 
-void ImGui::TextAligned(float align_x, float width, const char* fmt, ...)
+void ImGui::TextAligned(float align, float width, const char* fmt, ...)
 {
     va_list args;
     va_start(args, fmt);
-    TextAlignedV(align_x, width, fmt, args);
+    TextAlignedV(align, width, fmt, args);
     va_end(args);
 }
 
-// align_x: 0.0f = left, 0.5f = center, 1.0f = right.
+// align: 0.0f = left, 0.5f = center, 1.0f = right.
 // width :
 //   - 0.0f: shortcut for CalcTextSize().x
 //   - negative: shortcut for GetContentRegionAvail().x
-// FIXME-WIP: Works but API is likely to be reworked. This is designed for 1 item on the line. (#7024)
-void ImGui::TextAlignedV(float align_x, float width, const char* fmt, va_list args)
+// FIXME-WIP: Works but API is likely to be reworked.
+void ImGui::TextAlignedV(float align, float width, const char* fmt, va_list args)
 {
     ImGuiWindow* window = GetCurrentWindow();
     if (window->SkipItems)
@@ -366,8 +366,8 @@ void ImGui::TextAlignedV(float align_x, float width, const char* fmt, va_list ar
 
     const ImVec2 start_pos(window->DC.CursorPos.x, window->DC.CursorPos.y + window->DC.CurrLineTextBaseOffset);
     ImVec2 text_pos = start_pos;
-    if (align_x > 0.0f && text_size.x < widget_size.x)
-        text_pos.x += ImTrunc((widget_size.x - text_size.x) * align_x);
+    if (align > 0.0f && text_size.x < widget_size.x)
+        text_pos.x += ImTrunc((widget_size.x - text_size.x) * align);
     ImVec2 pos_max(start_pos.x + widget_size.x, window->ClipRect.Max.y);
     RenderTextEllipsis(window->DrawList, text_pos, pos_max, pos_max.x, text, text_end, &text_size);
 
