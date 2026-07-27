@@ -286,7 +286,7 @@ namespace ImGui {
         bool pressed;
         if (!exact && !partial) {
             ImGuiContext& g = *GImGui;
-            g.NextItemData.ItemFlags |= ImGuiItemFlags_MixedValue;
+            g.NextItemData.ItemFlagsSet |= ImGuiItemFlags_MixedValue;
         }
         pressed = Checkbox(label, exact);
         if (pressed) {
