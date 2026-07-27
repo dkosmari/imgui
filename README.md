@@ -47,7 +47,7 @@ This fork is kept up-to-date with ImGui releases, with a number of patches and a
        ```
     - `ImGui::to_string(ImGuiCol_ color)': wrapper for ImGui::GetStyleColorName(color)`.
     - `ToVec2()`: convert from any type with `.x` and `.y` into `ImVec2`.
-    - `ToVec4()`: convert from any type with `.x`, `.y`, `.z`, `.w`, or `.r`, `.g`, `.b`, .a`,
+    - `ToVec4()`: convert from any type with `.x`, `.y`, `.z`, `.w`, or `.r`, `.g`, `.b`, `.a`,
       into `ImVec4`.
 
 ## Documentation
