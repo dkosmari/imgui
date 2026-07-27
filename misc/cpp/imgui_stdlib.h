@@ -14,12 +14,14 @@
 #include <cstdarg>
 #include <cstdint>
 #include <filesystem>
+#include <format>
 #include <functional>
 #include <optional>
 #include <span>
 #include <string>
 #include <string_view>
 #include <type_traits>
+#include <utility>
 #include <vector>
 
 #include <imgui.h>
@@ -174,7 +176,7 @@ namespace ImGui {
 
     IMGUI_API
     ImVec2
-    CalcTextSize(const std::string& text,
+    CalcTextSize(std::string_view text,
                  bool hide_text_after_double_hash = false,
                  float wrap_width = -1.0f);
 
@@ -195,16 +197,10 @@ namespace ImGui {
 
     /// Enums are converted to their underlying type.
     template<concepts::enumeration E>
-    IMGUI_API
     bool
     CheckboxFlags(const std::string& label,
                   E& flags_var,
-                  E flags_ref)
-    {
-        return CheckboxFlags(label,
-                             static_cast<std::underlying_type_t<E>&>(flags_var),
-                             static_cast<std::underlying_type_t<E>>(flags_ref));
-    }
+                  E flags_ref);
 
 
     IMGUI_API
@@ -281,6 +277,106 @@ namespace ImGui {
          std::optional<T> v_max = {},
          const std::string& format = "",
          ImGuiSliderFlags flags = 0);
+
+
+    template<typename... Args>
+    void
+    FormatBulletText(std::format_string<Args...> fmt,
+                     Args&&... args);
+
+
+#ifndef IMGUI_DISABLE_DEBUG_TOOLS
+    template<typename... Args>
+    void
+    FormatDebugLog(std::format_string<Args...> fmt,
+                   Args&&... args);
+#endif
+
+
+    template<typename... Args>
+    void
+    FormatLabelText(const std::string& label,
+                    std::format_string<Args...> fmt,
+                    Args&&... args);
+
+
+    template<typename... Args>
+    void
+    FormatLogText(std::format_string<Args...> fmt,
+                  Args&&... args);
+
+
+    template<typename... Args>
+    void
+    FormatSetItemTooltip(std::format_string<Args...> fmt,
+                         Args&&... args);
+
+
+    template<typename... Args>
+    void
+    FormatSetTooltip(std::format_string<Args...> fmt,
+                     Args&&... args);
+
+
+    template<typename... Args>
+    void
+    FormatText(std::format_string<Args...> fmt,
+               Args&&... args);
+
+
+    template<typename... Args>
+    void
+    FormatTextAligned(float align,
+                      float width,
+                      std::format_string<Args...> fmt,
+                      Args&&... args);
+
+
+    template<typename... Args>
+    void
+    FormatTextColored(const ImVec4& col,
+                      std::format_string<Args...> fmt,
+                      Args&&... args);
+
+
+    template<typename... Args>
+    void
+    FormatTextDisabled(std::format_string<Args...> fmt,
+                       Args&&... args);
+
+
+    template<typename... Args>
+    void
+    FormatTextWrapped(std::format_string<Args...> fmt,
+                      Args&&... args);
+
+
+    template<typename... Args>
+    void
+    FormatTreeNode(const std::string& str_id,
+                   std::format_string<Args...> fmt,
+                   Args&&... args);
+
+    template<typename... Args>
+    void
+    FormatTreeNode(const void* ptr_id,
+                   std::format_string<Args...> fmt,
+                   Args&&... args);
+
+
+    template<typename... Args>
+    void
+    FormatTreeNodeEx(const std::string& str_id,
+                     ImGuiTreeNodeFlags flags,
+                     std::format_string<Args...> fmt,
+                     Args&&... args);
+
+    template<typename... Args>
+    void
+    FormatTreeNodeEx(const void* ptr_id,
+                     ImGuiTreeNodeFlags flags,
+                     std::format_string<Args...> fmt,
+                     Args&&... args);
 
 
     IMGUI_API
@@ -416,16 +512,7 @@ namespace ImGui {
 
     IMGUI_API
     void
-    LoadIniSettingsFromMemory(const std::string& ini);
-
-    template<typename T,
-             std::size_t Extent>
-    IMGUI_API
-    void
-    LoadIniSettingsFromMemory(std::span<T, Extent> ini)
-    {
-        LoadIniSettingsFromMemory(reinterpret_cast<const char*>(ini.data()), ini.size_bytes());
-    }
+    LoadIniSettingsFromMemory(std::string_view ini);
 
 
     IMGUI_API
@@ -455,13 +542,13 @@ namespace ImGui {
 
 
     IMGUI_API
-    void
+    bool
     OpenPopup(const std::string& str_id,
               ImGuiPopupFlags popup_flags = 0);
 
 
     IMGUI_API
-    void
+    bool
     OpenPopupOnItemClick(const std::string& str_id = "",
                          ImGuiPopupFlags popup_flags = 0);
 
@@ -491,18 +578,10 @@ namespace ImGui {
 
 
     template<typename T>
-    IMGUI_API
-    inline
     bool
     RadioButton(const std::string& label,
                 T& variable,
-                T reference)
-    {
-        bool result = RadioButton(label, variable == reference);
-        if (result)
-            variable = reference;
-        return result;
-    }
+                T reference);
 
 
     IMGUI_API
@@ -552,13 +631,7 @@ namespace ImGui {
     bool
     SetDragDropPayload(const std::string& type,
                        std::span<T, E> data,
-                       ImGuiCond cond = 0)
-    {
-        return SetDragDropPayload(type,
-                                  data.data(),
-                                  data.size_bytes(),
-                                  cond);
-    }
+                       ImGuiCond cond = 0);
 
 
     IMGUI_API
@@ -622,7 +695,7 @@ namespace ImGui {
 
     IMGUI_API
     void
-    Text(const std::string& text);
+    Text(std::string_view text);
 
 
     IMGUI_API
@@ -634,7 +707,8 @@ namespace ImGui {
 
     IMGUI_API
     void
-    TextColored(const ImVec4& col, const std::string& text);
+    TextColored(const ImVec4& col,
+                const std::string& text);
 
 
     IMGUI_API
@@ -674,32 +748,22 @@ namespace ImGui {
 
     /// Convert anything with .x, .y to ImVec2
     template<concepts::vec2 V>
-    IMGUI_API
     ImVec2
-    ToVec2(const V& v)
-    {
-        return ImVec2(v.x, v.y);
-    }
+    ToVec2(const V& v);
 
 
     /// Convert anything with .r, .g, .b, .a to ImVec4
     template<concepts::rgba T>
     IMGUI_API
     ImVec4
-    ToVec4(const T& c)
-    {
-        return ImVec4(c.r, c.g, c.b, c.a);
-    }
+    ToVec4(const T& c);
 
 
     /// Convert anything with .x, .y, .z, .w to ImVec4
     template<concepts::vec4 T>
     IMGUI_API
     ImVec4
-    ToVec4(const T& v)
-    {
-        return ImVec4(v.x, v.y, v.z, v.w);
-    }
+    ToVec4(const T& v);
 
 
     IMGUI_API
@@ -768,6 +832,263 @@ namespace ImGui {
             T max,
             const std::string& format = "",
             ImGuiSliderFlags flags = 0);
+
+
+    /*----------------------*/
+    /* Template definitions */
+    /*----------------------*/
+
+    template<concepts::enumeration E>
+    inline
+    bool
+    CheckboxFlags(const std::string& label,
+                  E& flags_var,
+                  E flags_ref)
+    {
+        return CheckboxFlags(label,
+                             static_cast<std::underlying_type_t<E>&>(flags_var),
+                             static_cast<std::underlying_type_t<E>>(flags_ref));
+    }
+
+    template<typename... Args>
+    inline
+    void
+    FormatBulletText(std::format_string<Args...> fmt,
+                     Args&&... args)
+    {
+        BulletText(std::format(std::move(fmt),
+                               std::forward<Args>(args)...));
+    }
+
+
+#ifndef IMGUI_DISABLE_DEBUG_TOOLS
+    template<typename... Args>
+    void
+    FormatDebugLog(std::format_string<Args...> fmt,
+                   Args&&... args)
+    {
+        DebugLog(std::format(std::move(fmt),
+                             std::forward<Args>(args)...));
+    }
+#endif
+
+
+    template<typename... Args>
+    inline
+    void
+    FormatLabelText(const std::string& label,
+                    std::format_string<Args...> fmt,
+                    Args&&... args)
+    {
+        LabelText(label,
+                  std::format(std::move(fmt),
+                              std::forward<Args>(args)...));
+    }
+
+
+    template<typename... Args>
+    inline
+    void
+    FormatLogText(std::format_string<Args...> fmt,
+                  Args&&... args)
+    {
+        LogText(std::format(std::move(fmt),
+                            std::forward<Args>(args)...));
+    }
+
+
+    template<typename... Args>
+    inline
+    void
+    FormatSetItemTooltip(std::format_string<Args...> fmt,
+                         Args&&... args)
+    {
+        SetItemTooltip(std::format(std::move(fmt),
+                                   std::forward<Args>(args)...));
+    }
+
+
+    template<typename... Args>
+    inline
+    void
+    FormatSetTooltip(std::format_string<Args...> fmt,
+                     Args&&... args)
+    {
+        SetTooltip(std::format(std::move(fmt),
+                               std::forward<Args>(args)...));
+    }
+
+
+    template<typename... Args>
+    inline
+    void
+    FormatText(std::format_string<Args...> fmt,
+               Args&&... args)
+    {
+        TextUnformatted(std::format(std::move(fmt),
+                                    std::forward<Args>(args)...));
+    }
+
+
+    template<typename... Args>
+    inline
+    void
+    FormatTextAligned(float align,
+                      float width,
+                      std::format_string<Args...> fmt,
+                      Args&&... args)
+    {
+        TextAligned(align,
+                    width,
+                    std::format(std::move(fmt),
+                                std::forward<Args>(args)...));
+    }
+
+
+    template<typename... Args>
+    inline
+    void
+    FormatTextColored(const ImVec4& col,
+                      std::format_string<Args...> fmt,
+                      Args&&... args)
+    {
+        TextColored(col,
+                    std::format(std::move(fmt),
+                                std::forward<Args>(args)...));
+    }
+
+
+    template<typename... Args>
+    inline
+    void
+    FormatTextDisabled(std::format_string<Args...> fmt,
+                       Args&&... args)
+    {
+        TextDisabled(std::format(std::move(fmt),
+                                 std::forward<Args>(args)...));
+    }
+
+
+    template<typename... Args>
+    inline
+    void
+    FormatTextWrapped(std::format_string<Args...> fmt,
+                      Args&&... args)
+    {
+        TextWrapped(std::format(std::move(fmt),
+                                std::forward<Args>(args)...));
+    }
+
+
+    template<typename... Args>
+    inline
+    void
+    FormatTreeNode(const std::string& str_id,
+                   std::format_string<Args...> fmt,
+                   Args&&... args)
+    {
+        TreeNode(str_id,
+                 std::format(std::move(fmt),
+                             std::forward<Args>(args)...));
+    }
+
+
+    template<typename... Args>
+    inline
+    void
+    FormatTreeNode(const void* ptr_id,
+                   std::format_string<Args...> fmt,
+                   Args&&... args)
+    {
+        TreeNode(ptr_id,
+                 std::format(std::move(fmt),
+                             std::forward<Args>(args)...));
+    }
+
+
+    template<typename... Args>
+    inline
+    void
+    FormatTreeNodeEx(const std::string& str_id,
+                     ImGuiTreeNodeFlags flags,
+                     std::format_string<Args...> fmt,
+                     Args&&... args)
+    {
+        TreeNodeEx(str_id,
+                   flags,
+                   std::format(std::move(fmt),
+                               std::forward<Args>(args)...));
+    }
+
+
+    template<typename... Args>
+    inline
+    void
+    FormatTreeNodeEx(const void* ptr_id,
+                     ImGuiTreeNodeFlags flags,
+                     std::format_string<Args...> fmt,
+                     Args&&... args)
+    {
+        TreeNodeEx(ptr_id,
+                   flags,
+                   std::format(std::move(fmt),
+                               std::forward<Args>(args)...));
+    }
+
+
+    template<typename T>
+    inline
+    bool
+    RadioButton(const std::string& label,
+                T& variable,
+                T reference)
+    {
+        bool result = RadioButton(label, variable == reference);
+        if (result)
+            variable = reference;
+        return result;
+    }
+
+
+    template<typename T,
+             std::size_t E>
+    inline
+    bool
+    SetDragDropPayload(const std::string& type,
+                       std::span<T, E> data,
+                       ImGuiCond cond)
+    {
+        return SetDragDropPayload(type,
+                                  data.data(),
+                                  data.size_bytes(),
+                                  cond);
+    }
+
+
+    template<concepts::vec2 V>
+    ImVec2
+    ToVec2(const V& v)
+    {
+        return ImVec2(v.x, v.y);
+    }
+
+
+    template<concepts::rgba T>
+    IMGUI_API
+    ImVec4
+    ToVec4(const T& c)
+    {
+        return ImVec4(c.r, c.g, c.b, c.a);
+    }
+
+
+    template<concepts::vec4 T>
+    IMGUI_API
+    ImVec4
+    ToVec4(const T& v)
+    {
+        return ImVec4(v.x, v.y, v.z, v.w);
+    }
 
 } // namespace ImGui
 

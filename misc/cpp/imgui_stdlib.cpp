@@ -241,7 +241,11 @@ namespace ImGui {
     void
     BulletText(const std::string& text)
     {
-        BulletText("%s", text.data());
+        int size = text.size();
+        if (std::cmp_equal(size, text.size()))
+            BulletText("%.*s", size, text.data());
+        else [[unlikely]]
+            BulletText("%s", text.data());
     }
 
 
@@ -254,7 +258,7 @@ namespace ImGui {
 
 
     ImVec2
-    CalcTextSize(const std::string& text,
+    CalcTextSize(std::string_view text,
                  bool hide_text_after_double_hash,
                  float wrap_width)
     {
@@ -397,7 +401,11 @@ namespace ImGui {
     void
     DebugLog(const std::string& msg)
     {
-        DebugLog("%s", msg.data());
+        int size = msg.size();
+        if (std::cmp_equal(size, msg.size()))
+            DebugLog("%.*s", size, msg.data());
+        else [[unlikely]]
+            DebugLog("%s", msg.data());
     }
 #endif
 
@@ -807,7 +815,11 @@ namespace ImGui {
     LabelText(const std::string& label,
               const std::string& text)
     {
-        LabelText(label.data(), "%s", text.data());
+        int size = text.size();
+        if (std::cmp_equal(size, text.size()))
+            LabelText(label.data(), "%.*s", size, text.data());
+        else [[unlikely]]
+            LabelText(label.data(), "%s", text.data());
     }
 
 
@@ -892,7 +904,7 @@ namespace ImGui {
 
 
     void
-    LoadIniSettingsFromMemory(const std::string& ini)
+    LoadIniSettingsFromMemory(std::string_view ini)
     {
         LoadIniSettingsFromMemory(ini.data(), ini.size());
     }
@@ -901,7 +913,11 @@ namespace ImGui {
     void
     LogText(const std::string& text)
     {
-        LogText("%s", text.data());
+        int size = text.size();
+        if (std::cmp_equal(size, text.size()))
+            LogText("%.*s", size, text.data());
+        else [[unlikely]]
+            LogText("%s", text.data());
     }
 
 
@@ -939,19 +955,19 @@ namespace ImGui {
     }
 
 
-    void
+    bool
     OpenPopup(const std::string& str_id,
               ImGuiPopupFlags popup_flags)
     {
-        OpenPopup(str_id.data(), popup_flags);
+        return OpenPopup(str_id.data(), popup_flags);
     }
 
 
-    void
+    bool
     OpenPopupOnItemClick(const std::string& str_id,
                          ImGuiPopupFlags popup_flags)
     {
-        OpenPopupOnItemClick(str_id.empty() ? nullptr : str_id.data(), popup_flags);
+        return OpenPopupOnItemClick(str_id.empty() ? nullptr : str_id.data(), popup_flags);
     }
 
 
@@ -1048,7 +1064,11 @@ namespace ImGui {
     void
     SetItemTooltip(const std::string& text)
     {
-        SetItemTooltip("%s", text.data());
+        int size = text.size();
+        if (std::cmp_equal(size, text.size()))
+            SetItemTooltip("%.*s", size, text.data());
+        else [[unlikely]]
+            SetItemTooltip("%s", text.data());
     }
 
 
@@ -1062,7 +1082,11 @@ namespace ImGui {
     void
     SetTooltip(const std::string& text)
     {
-        SetTooltip("%s", text.data());
+        int size = text.size();
+        if (std::cmp_equal(size, text.size()))
+            SetTooltip("%.*s", size, text.data());
+        else [[unlikely]]
+            SetTooltip("%s", text.data());
     }
 
 
@@ -1203,9 +1227,9 @@ namespace ImGui {
 
 
     void
-    Text(const std::string& text)
+    Text(std::string_view text)
     {
-        Text("%s", text.data());
+        TextUnformatted(text);
     }
 
 
@@ -1214,21 +1238,33 @@ namespace ImGui {
                 float width,
                 const std::string& text)
     {
-        TextAligned(align, width, "%s", text.data());
+        int size = text.size();
+        if (std::cmp_equal(size, text.size()))
+            TextAligned(align, width, "%.*s", size, text.data());
+        else [[unlikely]]
+            TextAligned(align, width, "%s", text.data());
     }
 
 
     void
     TextColored(const ImVec4& col, const std::string& text)
     {
-        TextColored(col, "%s", text.data());
+        int size = text.size();
+        if (std::cmp_equal(size, text.size()))
+            TextColored(col, "%.*s", size, text.data());
+        else [[unlikely]]
+            TextColored(col, "%s", text.data());
     }
 
 
     void
     TextDisabled(const std::string& text)
     {
-        TextDisabled("%s", text.data());
+        int size = text.size();
+        if (std::cmp_equal(size, text.size()))
+            TextDisabled("%.*s", size, text.data());
+        else [[unlikely]]
+            TextDisabled("%s", text.data());
     }
 
 
@@ -1258,14 +1294,19 @@ namespace ImGui {
     void
     TextUnformatted(std::string_view text)
     {
-        TextUnformatted(text.data(), text.data() + text.size());
+        TextUnformatted(text.data(),
+                        text.data() + text.size());
     }
 
 
     void
     TextWrapped(const std::string& text)
     {
-        TextWrapped("%s", text.data());
+        int size = text.size();
+        if (std::cmp_equal(size, text.size()))
+            TextWrapped("%.*s", size, text.data());
+        else [[unlikely]]
+            TextWrapped("%s", text.data());
     }
 
 
@@ -1287,7 +1328,11 @@ namespace ImGui {
     TreeNode(const std::string& str_id,
              const std::string& label)
     {
-        return TreeNode(str_id.data(), "%s", label.data());
+        int size = label.size();
+        if (std::cmp_equal(size, label.size()))
+            return TreeNode(str_id.data(), "%.*s", size, label.data());
+        else [[unlikely]]
+            return TreeNode(str_id.data(), "%s", label.data());
     }
 
 
@@ -1295,7 +1340,11 @@ namespace ImGui {
     TreeNode(const void* ptr_id,
              const std::string& label)
     {
-        return TreeNode(ptr_id, "%s", label.data());
+        int size = label.size();
+        if (std::cmp_equal(size, label.size()))
+            return TreeNode(ptr_id, "%.*s", size, label.data());
+        else [[unlikely]]
+            return TreeNode(ptr_id, "%s", label.data());
     }
 
 
@@ -1312,7 +1361,11 @@ namespace ImGui {
                ImGuiTreeNodeFlags flags,
                const std::string& label)
     {
-        return TreeNodeEx(str_id.data(), flags, "%s", label.data());
+        int size = label.size();
+        if (std::cmp_equal(size, label.size()))
+            return TreeNodeEx(str_id.data(), flags, "%.*s", size, label.data());
+        else [[unlikely]]
+            return TreeNodeEx(str_id.data(), flags, "%s", label.data());
     }
 
 
@@ -1321,7 +1374,11 @@ namespace ImGui {
                ImGuiTreeNodeFlags flags,
                const std::string& label)
     {
-        return TreeNodeEx(ptr_id, flags, "%s", label.data());
+        int size = label.size();
+        if (std::cmp_equal(size, label.size()))
+            return TreeNodeEx(ptr_id, flags, "%.*s", size, label.data());
+        else [[unlikely]]
+            return TreeNodeEx(ptr_id, flags, "%s", label.data());
     }
 
 
