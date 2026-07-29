@@ -630,8 +630,8 @@ namespace ImGui
     IMGUI_API void          TextDisabledV(const char* fmt, va_list args)                    IM_FMTLIST(1);
     IMGUI_API void          TextWrapped(const char* fmt, ...)                               IM_FMTARGS(1); // shortcut for PushTextWrapPos(0.0f); Text(fmt, ...); PopTextWrapPos();. Note that this won't work on an auto-resizing window if there's no other widgets to extend the window width, yoy may need to set a size using SetNextWindowSize().
     IMGUI_API void          TextWrappedV(const char* fmt, va_list args)                     IM_FMTLIST(1);
-    IMGUI_API void          TextAligned(float align, float width, const char* fmt, ...) IM_FMTARGS(3); // align = 0 for left, 1 for right; width = 0 for natural text size, width < 0 to use all available region
-    IMGUI_API void          TextAlignedV(float align, float width, const char* fmt, va_list args) IM_FMTLIST(3);
+    IMGUI_API bool          TextAligned(float align, float width, const char* fmt, ...) IM_FMTARGS(3); // align = 0 for left, 1 for right; width = 0 for natural text size, width < 0 to use all available region; return true if any text was ellipsized.
+    IMGUI_API bool          TextAlignedV(float align, float width, const char* fmt, va_list args) IM_FMTLIST(3);
     IMGUI_API void          LabelText(const char* label, const char* fmt, ...)              IM_FMTARGS(2); // display text+label aligned the same way as value+label widgets
     IMGUI_API void          LabelTextV(const char* label, const char* fmt, va_list args)    IM_FMTLIST(2);
     IMGUI_API void          BulletText(const char* fmt, ...)                                IM_FMTARGS(1); // shortcut for Bullet()+Text()
@@ -2399,7 +2399,7 @@ struct ImGuiStyle
     ImGuiTreeNodeFlags TreeLinesFlags;      // Default way to draw lines connecting TreeNode hierarchy. ImGuiTreeNodeFlags_DrawLinesNone or ImGuiTreeNodeFlags_DrawLinesFull or ImGuiTreeNodeFlags_DrawLinesToNodes.
     float       TreeLinesSize;              // Thickness of outlines when using ImGuiTreeNodeFlags_DrawLines.
     float       TreeLinesRounding;          // Radius of lines connecting child nodes to the vertical line.
-    float       MenuItemRounding;           // Radius of MenuItem, BeginMenu rounding. 
+    float       MenuItemRounding;           // Radius of MenuItem, BeginMenu rounding.
     float       SelectableRounding;         // Radius of Selectable rounding. MODIFYING THIS IS DISCOURAGED. CONTIGUOUS SELECTIONS WILL NOT LOOK RIGHT. (#7589)
     float       DragDropTargetRounding;     // Radius of the drag and drop target frame. When <0.0f: use FrameRounding.
     float       DragDropTargetBorderSize;   // Thickness of the drag and drop target border.
@@ -3831,8 +3831,8 @@ struct ImFontAtlas
     IMGUI_API void              CompactCache();                                 // Compact cached glyphs and texture.
     IMGUI_API void              SetFontLoader(const ImFontLoader* font_loader); // Change font loader at runtime.
 
-    // Clearing the atlas/fonts has little use nowadays, unless you want to batch remove all fonts. 
-    // - Since 1.92, you can call ClearFonts() mid-frame, if you load new fonts afterwards. 
+    // Clearing the atlas/fonts has little use nowadays, unless you want to batch remove all fonts.
+    // - Since 1.92, you can call ClearFonts() mid-frame, if you load new fonts afterwards.
     // - As we are transitioning toward our new font system the semantic for those functions gets increasingly misleading and are often a source of issues.
     //   TL;DR; most likely, don't use any of those functions. We expect to obsolete/rework them.
     IMGUI_API void              Clear();                    // Clear everything (fonts + textures). Don't call mid-frame!

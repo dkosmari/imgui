@@ -1233,16 +1233,16 @@ namespace ImGui {
     }
 
 
-    void
+    bool
     TextAligned(float align,
                 float width,
                 const std::string& text)
     {
         int size = text.size();
         if (std::cmp_equal(size, text.size()))
-            TextAligned(align, width, "%.*s", size, text.data());
+            return TextAligned(align, width, "%.*s", size, text.data());
         else [[unlikely]]
-            TextAligned(align, width, "%s", text.data());
+            return TextAligned(align, width, "%s", text.data());
     }
 
 

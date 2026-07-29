@@ -7,7 +7,8 @@ This fork is kept up-to-date with ImGui releases, with a number of patches and a
 
 - Modified ImGui functions:
   - `ImGui::ArrowButton()`: has an optional `size` argument.
-  - `ImGui::TextAligned()`: moved from `imgui_private.h` to the public API.
+  - `ImGui::TextAligned()`: moved from `imgui_private.h` to the public API; it returns `true`
+    when ellipsizing happens, instead of showing a tooltip with the full text.
   - `ImGuiStorage`: has templated `Get()` and `Set()` methods to be used for enums.
 
 - Changes to optimize ImGui for touch screen interaction:

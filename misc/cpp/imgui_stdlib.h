@@ -325,7 +325,7 @@ namespace ImGui {
 
 
     template<typename... Args>
-    void
+    bool
     FormatTextAligned(float align,
                       float width,
                       std::format_string<Args...> fmt,
@@ -699,7 +699,7 @@ namespace ImGui {
 
 
     IMGUI_API
-    void
+    bool
     TextAligned(float align,
                 float width,
                 const std::string& text);
@@ -932,16 +932,16 @@ namespace ImGui {
 
     template<typename... Args>
     inline
-    void
+    bool
     FormatTextAligned(float align,
                       float width,
                       std::format_string<Args...> fmt,
                       Args&&... args)
     {
-        TextAligned(align,
-                    width,
-                    std::format(std::move(fmt),
-                                std::forward<Args>(args)...));
+        return TextAligned(align,
+                           width,
+                           std::format(std::move(fmt),
+                                       std::forward<Args>(args)...));
     }
 
 

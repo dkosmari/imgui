@@ -342,24 +342,26 @@ void ImGui::TextWrappedV(const char* fmt, va_list args)
         PopTextWrapPos();
 }
 
-void ImGui::TextAligned(float align, float width, const char* fmt, ...)
+bool ImGui::TextAligned(float align, float width, const char* fmt, ...)
 {
     va_list args;
     va_start(args, fmt);
-    TextAlignedV(align, width, fmt, args);
+    bool result = TextAlignedV(align, width, fmt, args);
     va_end(args);
+    return result;
 }
 
 // align: 0.0f = left, 0.5f = center, 1.0f = right.
 // width :
 //   - 0.0f: shortcut for CalcTextSize().x
 //   - negative: shortcut for GetContentRegionAvail().x
+// Returns true if any text was ellipsized.
 // FIXME-WIP: Works but API is likely to be reworked.
-void ImGui::TextAlignedV(float align, float width, const char* fmt, va_list args)
+bool ImGui::TextAlignedV(float align, float width, const char* fmt, va_list args)
 {
     ImGuiWindow* window = GetCurrentWindow();
     if (window->SkipItems)
-        return;
+        return false;
 
     const char* text, *text_end;
     ImFormatStringToTempBufferV(&text, &text_end, fmt, args);
@@ -376,8 +378,7 @@ void ImGui::TextAlignedV(float align, float width, const char* fmt, va_list args
     ItemSize(widget_size);
     ItemAdd(ImRect(start_pos, start_pos + widget_size), 0);
 
-    if (widget_size.x < text_size.x && IsItemHovered(ImGuiHoveredFlags_NoNavOverride | ImGuiHoveredFlags_AllowWhenDisabled | ImGuiHoveredFlags_ForTooltip))
-        SetTooltip("%.*s", (int)(text_end - text), text);
+    return widget_size.x < text_size.x;
 }
 
 void ImGui::LabelText(const char* label, const char* fmt, ...)
