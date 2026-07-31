@@ -10580,6 +10580,11 @@ void ImGui::ResetMouseDragDelta(ImGuiMouseButton button)
     g.IO.MouseClickedPos[button] = g.IO.MousePos;
 }
 
+void ImGui::SuppressDragScroll()
+{
+    SetDragAction();
+}
+
 // Get desired mouse cursor shape.
 // Important: this is meant to be used by a platform backend, it is reset in ImGui::NewFrame(),
 // updated during the frame, and locked in EndFrame()/Render().
@@ -11007,6 +11012,19 @@ void ImGui::UpdateInputEvents(bool trickle_fast_inputs)
             io.MouseDown[button] = e->MouseButton.Down;
             io.MouseSource = e->MouseButton.MouseSource;
             mouse_button_changed |= (1 << button);
+
+            // If TouchScreen and button released, stop processing, replace current event with a
+            // mouse move to invalidate current cursor position.
+            // This prevents hover events from happening.
+            if (e->MouseButton.MouseSource == ImGuiMouseSource_TouchScreen && !e->MouseButton.Down) {
+                e->Type = ImGuiInputEventType_MousePos;
+                e->MousePos = ImGuiInputEventMousePos{
+                    .PosX = -FLT_MAX,
+                    .PosY = -FLT_MAX,
+                    .MouseSource = ImGuiMouseSource_TouchScreen,
+                };
+                break;
+            }
         }
         else if (e->Type == ImGuiInputEventType_MouseWheel)
         {

@@ -1766,8 +1766,11 @@ static void DemoWindowWidgetsDragAndDrop()
                 const char* item = item_names[n];
                 ImGui::Selectable(item);
 
+                if (ImGui::IsItemHovered())
+                    ImGui::SuppressDragScroll();
                 if (ImGui::IsItemActive() && !ImGui::IsItemHovered())
                 {
+                    ImGui::SuppressDragScroll();
                     int n_next = n + (ImGui::GetMouseDragDelta(0).y < 0.0f ? -1 : 1);
                     if (n_next >= 0 && n_next < IM_COUNTOF(item_names))
                     {
@@ -2608,7 +2611,8 @@ static void DemoWindowWidgetsSelectables()
                 "left-align otherwise it becomes difficult to layout multiple items on a same line");
 
             static bool selected[3 * 3] = { true, false, true, false, true, false, true, false, true };
-            const float size = ImGui::CalcTextSize("(1.0,1.0)").x;
+            const ImVec2 text_size = ImGui::CalcTextSize("(1.0,1.0)");
+            const ImVec2 sel_size = { text_size.x * 1.5f, text_size.y * 2.0f };
             for (int y = 0; y < 3; y++)
             {
                 for (int x = 0; x < 3; x++)
@@ -2618,7 +2622,7 @@ static void DemoWindowWidgetsSelectables()
                     sprintf(name, "(%.1f,%.1f)", alignment.x, alignment.y);
                     if (x > 0) ImGui::SameLine();
                     ImGui::PushStyleVar(ImGuiStyleVar_SelectableTextAlign, alignment);
-                    ImGui::Selectable(name, &selected[3 * y + x], ImGuiSelectableFlags_None, ImVec2(size, size));
+                    ImGui::Selectable(name, &selected[3 * y + x], ImGuiSelectableFlags_None, sel_size);
                     ImGui::PopStyleVar();
                 }
             }

@@ -84,7 +84,7 @@ main()
     io.ConfigDragScroll = true;
     io.ConfigWindowsMoveFromTitleBarOnly = true;
     io.MouseDragThreshold = 25;
-    io.ConfigInputTrickleEventQueue = false;
+    // io.ConfigInputTrickleEventQueue = false;
 
     ImGuiStyle& style = ImGui::GetStyle();
     style.ScaleAllSizes(2.0f);

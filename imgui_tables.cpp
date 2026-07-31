@@ -634,7 +634,7 @@ bool    ImGui::BeginTableEx(const char* name, ImGuiID id, int columns_count, ImG
     // At this point the ->NameOffset field of each column will be invalid until TableUpdateLayout() or the first call to TableSetupColumn()
     if (table->ColumnsNames.Buf.Size > 0)
         table->ColumnsNames.Buf.resize(0);
-    
+
     return true;
 }
 
@@ -1448,6 +1448,7 @@ void ImGui::TableUpdateBorders(ImGuiTable* table)
                 table->ResizeLockMinContentsX2 = table->RightMostEnabledColumn != -1 ? table->Columns[table->RightMostEnabledColumn].MaxX : -FLT_MAX;
             table->ResizedColumn = (ImGuiTableColumnIdx)column_n;
             table->InstanceInteracted = table->InstanceCurrent;
+            SetDragAction(true);
         }
         if ((hovered && g.HoveredIdTimer > TABLE_RESIZE_SEPARATOR_FEEDBACK_TIMER) || held)
         {
@@ -3383,12 +3384,18 @@ void ImGui::TableHeader(const char* label)
     // Using AllowOverlap mode because we cover the whole cell, and we want user to be able to submit subsequent items.
     const bool highlight = (table->HighlightColumnHeader == column_n);
     bool hovered, held;
-    bool pressed = ButtonBehavior(bb, id, &hovered, &held, ImGuiButtonFlags_AllowOverlap);
+    ImGuiButtonFlags button_flags = !g.IO.ConfigDragScroll
+        ? ImGuiButtonFlags_AllowOverlap
+        : static_cast<ImGuiButtonFlags>(ImGuiButtonFlags_PressedOnClickRelease);
+    bool pressed = ButtonBehavior(bb, id, &hovered, &held, button_flags);
     if (held || hovered || highlight)
     {
         const ImU32 col = GetColorU32(held ? ImGuiCol_HeaderActive : hovered ? ImGuiCol_HeaderHovered : ImGuiCol_Header);
         //RenderFrame(bb.Min, bb.Max, col, false, 0.0f);
         TableSetBgColor(ImGuiTableBgTarget_CellBg, col, table->CurrentColumn);
+        // Make sure reorderable headers don't scroll the window.
+        if (held && table->Flags & ImGuiTableFlags_Reorderable)
+            SetDragAction();
     }
     else
     {
