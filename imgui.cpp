@@ -11019,9 +11019,9 @@ void ImGui::UpdateInputEvents(bool trickle_fast_inputs)
             if (e->MouseButton.MouseSource == ImGuiMouseSource_TouchScreen && !e->MouseButton.Down) {
                 e->Type = ImGuiInputEventType_MousePos;
                 e->MousePos = ImGuiInputEventMousePos{
-                    .PosX = -FLT_MAX,
-                    .PosY = -FLT_MAX,
-                    .MouseSource = ImGuiMouseSource_TouchScreen,
+                    -FLT_MAX,
+                    -FLT_MAX,
+                    ImGuiMouseSource_TouchScreen,
                 };
                 break;
             }
