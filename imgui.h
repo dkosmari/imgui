@@ -79,6 +79,14 @@ Index of this file:
 #include <stddef.h>                 // ptrdiff_t, NULL
 #include <string.h>                 // memset, memmove, memcpy, strlen, strchr, strcpy, strcmp
 
+#if __cplusplus >= 202002L
+#include <span>
+#endif
+
+#if __cplusplus >= 201703L
+#include <filesystem>
+#endif
+
 // Define attributes of all API symbols declarations (e.g. for DLL under Windows)
 // IMGUI_API is used for core imgui functions, IMGUI_IMPL_API is used for the default backends files (imgui_impl_xxx.h)
 // Using dear imgui via a shared library is not recommended: we don't guarantee backward nor forward ABI compatibility + this is a call-heavy library and function call overhead adds up.
@@ -3840,6 +3848,34 @@ struct ImFontAtlas
     IMGUI_API void              ClearFonts();               // Clear input+output font data/glyphs. New fonts and textures will be recreated afterwards.
     IMGUI_API void              ClearInputData();           // [OBSOLETE] Clear input data (all ImFontConfig structures including sizes, TTF data, glyph ranges, etc.) = all the data used to build the texture and fonts.
     IMGUI_API void              ClearTexData();             // [OBSOLETE] Clear CPU-side copy of the texture data. Saves RAM once the texture has been copied to graphics memory.
+
+#if __cpp_lib_filesystem >= 201703L
+    // Overload taking a std::filesystem::path
+    inline
+    ImFont* AddFontFromFileTTF(const std::filesystem::path& filename, float size_pixels = 0.0f, const ImFontConfig* font_cfg = NULL, const ImWchar* glyph_ranges = NULL)
+    {
+        return AddFontFromFileTTF(filename.c_str(), size_pixels, font_cfg, glyph_ranges);
+    }
+#endif
+
+#if __cpp_lib_span >= 202002L
+    // Overloads taking a std::span argument.
+    template<typename T,
+             std::size_t E>
+    inline
+    ImFont* AddFontFromMemoryTTF(std::span<T, E> font_data, float size_pixels = 0.0f, const ImFontConfig* font_cfg = NULL, const ImWchar* glyph_ranges = NULL)
+    {
+        return AddFontFromMemoryTTF(font_data.data(), font_data.size_bytes(), size_pixels, font_cfg, glyph_ranges);
+    }
+
+    template<typename T,
+             std::size_t E>
+    inline
+    ImFont* AddFontFromMemoryCompressedTTF(std::span<const T, E> compressed_font_data, float size_pixels = 0.0f, const ImFontConfig* font_cfg = NULL, const ImWchar* glyph_ranges = NULL)
+    {
+        return AddFontFromMemoryCompressedTTF(compressed_font_data.data(), compressed_font_data.size_bytes(), size_pixels, font_cfg, glyph_ranges);
+    }
+#endif
 
 #ifndef IMGUI_DISABLE_OBSOLETE_FUNCTIONS
     // Legacy path for build atlas + retrieving pixel data.
