@@ -8,6 +8,8 @@
 
 #pragma once
 
+#include <utility>
+
 #ifndef IMGUI_DISABLE
 
 #include <imgui.h>
@@ -56,13 +58,14 @@ namespace ImGui::RAII {
 
     struct Child : detail::Conditional {
 
+        template<typename T>
         explicit
-        Child(const auto& str_id,
+        Child(T&& str_id,
               const ImVec2& size = {0, 0},
               ImGuiChildFlags child_flags = 0,
               ImGuiWindowFlags window_flags = 0)
             noexcept :
-            detail::Conditional{BeginChild(str_id,
+            detail::Conditional{BeginChild(std::forward<T>(str_id),
                                            size,
                                            child_flags,
                                            window_flags)}
@@ -71,7 +74,7 @@ namespace ImGui::RAII {
         ~Child()
             noexcept
         {
-            // Note: ImGui::EndChild() is unconditional.
+            // NOTE: ImGui::EndChild() is unconditional.
             EndChild();
         }
 
@@ -100,12 +103,16 @@ namespace ImGui::RAII {
 
     struct Combo : detail::Conditional {
 
+        template<typename T,
+                 typename U>
         explicit
-        Combo(const auto& label,
-              const auto& preview,
+        Combo(T&& label,
+              U&& preview,
               ImGuiComboFlags flags = 0)
             noexcept :
-            detail::Conditional{BeginCombo(label, preview, flags)}
+            detail::Conditional{BeginCombo(std::forward<T>(label),
+                                           std::forward<U>(preview),
+                                           flags)}
         {}
 
         ~Combo()
@@ -193,6 +200,7 @@ namespace ImGui::RAII {
 
     struct Group : detail::Immovable {
 
+        explicit
         Group()
             noexcept
         {
@@ -210,11 +218,12 @@ namespace ImGui::RAII {
 
     struct ID : detail::Immovable {
 
+        template<typename... Args>
         explicit
-        ID(const auto&... args)
+        ID(Args&&... args)
             noexcept
         {
-            PushID(args...);
+            PushID(std::forward<Args>(args)...);
         }
 
         ~ID()
@@ -306,11 +315,13 @@ namespace ImGui::RAII {
 
     struct ListBox : detail::Conditional {
 
+        template<typename T>
         explicit
-        ListBox(const auto& label,
+        ListBox(T&& label,
                 const ImVec2& size = {0, 0})
             noexcept :
-            detail::Conditional{BeginListBox(label, size)}
+            detail::Conditional{BeginListBox(std::forward<T>(label),
+                                             size)}
         {}
 
         ~ListBox()
@@ -343,11 +354,13 @@ namespace ImGui::RAII {
 
     struct Menu : detail::Conditional {
 
+        template<typename T>
         explicit
-        Menu(const auto& label,
+        Menu(T&& label,
              bool enabled = true)
             noexcept :
-            detail::Conditional{BeginMenu(label, enabled)}
+            detail::Conditional{BeginMenu(std::forward<T>(label),
+                                          enabled)}
         {}
 
         ~Menu()
@@ -409,11 +422,13 @@ namespace ImGui::RAII {
 
     struct Popup : detail::Conditional {
 
+        template<typename T>
         explicit
-        Popup(const auto& str_id,
+        Popup(T&& str_id,
               ImGuiWindowFlags flags = 0)
             noexcept :
-            detail::Conditional{BeginPopup(str_id, flags)}
+            detail::Conditional{BeginPopup(std::forward<T>(str_id),
+                                           flags)}
         {}
 
         ~Popup()
@@ -426,16 +441,81 @@ namespace ImGui::RAII {
     }; // struct Popup
 
 
+    struct PopupContextItem : detail::Conditional {
+
+        template<typename T>
+        explicit
+        PopupContextItem(T&& str_id,
+                         ImGuiPopupFlags popup_flags = 0)
+            noexcept :
+            detail::Conditional{BeginPopupContextItem(std::forward<T>(str_id),
+                                                      popup_flags)}
+        {}
+
+        ~PopupContextItem()
+            noexcept
+        {
+            if (status)
+                EndPopup();
+        }
+
+    }; // struct PopupContextItem
+
+
+    struct PopupContextWindow : detail::Conditional {
+
+        template<typename T>
+        explicit
+        PopupContextWindow(T&& str_id,
+                           ImGuiPopupFlags popup_flags = 0)
+            noexcept :
+            detail::Conditional{BeginPopupContextWindow(std::forward<T>(str_id),
+                                                        popup_flags)}
+        {}
+
+        ~PopupContextWindow()
+            noexcept
+        {
+            if (status)
+                EndPopup();
+        }
+
+    }; // struct PopupContextWindow
+
+
+    struct PopupContextVoid : detail::Conditional {
+
+        template<typename T>
+        explicit
+        PopupContextVoid(T&& str_id,
+                         ImGuiPopupFlags popup_flags = 0)
+            noexcept :
+            detail::Conditional{BeginPopupContextVoid(std::forward<T>(str_id),
+                                                      popup_flags)}
+        {}
+
+        ~PopupContextVoid()
+            noexcept
+        {
+            if (status)
+                EndPopup();
+        }
+
+    }; // struct PopupContextVoid
+
+
     struct PopupModal : detail::Conditional {
 
+        template<typename T>
         explicit
-        PopupModal(const auto& name,
+        PopupModal(T&& name,
                    bool* p_open = nullptr,
                    ImGuiWindowFlags flags = 0)
             noexcept :
-            detail::Conditional{BeginPopupModal(name, p_open, flags)}
+            detail::Conditional{BeginPopupModal(std::forward<T>(name),
+                                                p_open,
+                                                flags)}
         {}
-
 
         ~PopupModal()
         {
@@ -540,11 +620,13 @@ namespace ImGui::RAII {
 
     struct TabBar : detail::Conditional {
 
+        template<typename T>
         explicit
-        TabBar(const auto& str_id,
+        TabBar(T&& str_id,
                ImGuiTabBarFlags flags = 0)
             noexcept :
-            detail::Conditional{BeginTabBar(str_id, flags)}
+            detail::Conditional{BeginTabBar(std::forward<T>(str_id),
+                                            flags)}
         {}
 
         ~TabBar()
@@ -559,12 +641,15 @@ namespace ImGui::RAII {
 
     struct TabItem : detail::Conditional {
 
+        template<typename T>
         explicit
-        TabItem(const auto& label,
+        TabItem(T&& label,
                 bool* p_open = nullptr,
                 ImGuiTabItemFlags flags = 0)
             noexcept :
-            detail::Conditional{BeginTabItem(label, p_open, flags)}
+            detail::Conditional{BeginTabItem(std::forward<T>(label),
+                                             p_open,
+                                             flags)}
         {}
 
         ~TabItem()
@@ -579,14 +664,15 @@ namespace ImGui::RAII {
 
     struct Table : detail::Conditional {
 
+        template<typename T>
         explicit
-        Table(const auto& str_id,
+        Table(T&& str_id,
               int columns,
               ImGuiTableFlags flags = 0,
               const ImVec2& outer_size = {0, 0},
               float inner_width = 0)
             noexcept :
-            detail::Conditional{BeginTable(str_id,
+            detail::Conditional{BeginTable(std::forward<T>(str_id),
                                            columns,
                                            flags,
                                            outer_size,
@@ -640,12 +726,15 @@ namespace ImGui::RAII {
 
     struct Window : detail::Conditional {
 
+        template<typename T>
         explicit
-        Window(const auto& name,
+        Window(T&& name,
                bool* p_open = nullptr,
                ImGuiWindowFlags flags = 0)
             noexcept :
-            detail::Conditional{Begin(name, p_open, flags)}
+            detail::Conditional{Begin(std::forward<T>(name),
+                                      p_open,
+                                      flags)}
         {}
 
         ~Window()

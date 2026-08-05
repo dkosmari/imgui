@@ -572,6 +572,11 @@ namespace ImGui {
 
 
     IMGUI_API
+    void
+    PushID(std::string_view id);
+
+
+    IMGUI_API
     bool
     RadioButton(const std::string& label,
                 bool active);
