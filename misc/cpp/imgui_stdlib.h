@@ -167,12 +167,22 @@ namespace ImGui {
     void
     BulletText(const std::string& text);
 
+    IMGUI_API
+    void
+    BulletText(std::string_view text);
+
 
     IMGUI_API
     bool
     Button(const std::string& label,
            const ImVec2& size = {0, 0});
 
+
+    IMGUI_API
+    ImVec2
+    CalcTextSize(const std::string& text,
+                 bool hide_text_after_double_hash = false,
+                 float wrap_width = -1.0f);
 
     IMGUI_API
     ImVec2
@@ -243,6 +253,10 @@ namespace ImGui {
     IMGUI_API
     void
     DebugLog(const std::string& msg);
+
+    IMGUI_API
+    void
+    DebugLog(std::string_view msg);
 #endif
 
 
@@ -487,6 +501,11 @@ namespace ImGui {
     LabelText(const std::string& label,
               const std::string& text);
 
+    IMGUI_API
+    void
+    LabelText(const std::string& label,
+              std::string_view text);
+
 
     IMGUI_API
     bool
@@ -518,6 +537,10 @@ namespace ImGui {
     IMGUI_API
     void
     LogText(const std::string& text);
+
+    IMGUI_API
+    void
+    LogText(std::string_view text);
 
 
     IMGUI_API
@@ -643,6 +666,10 @@ namespace ImGui {
     void
     SetItemTooltip(const std::string& text);
 
+    IMGUI_API
+    void
+    SetItemTooltip(std::string_view text);
+
 
     IMGUI_API
     void
@@ -652,6 +679,10 @@ namespace ImGui {
     IMGUI_API
     void
     SetTooltip(const std::string& text);
+
+    IMGUI_API
+    void
+    SetTooltip(std::string_view text);
 
 
     /// Wrapper for SliderScalar()
@@ -700,6 +731,10 @@ namespace ImGui {
 
     IMGUI_API
     void
+    Text(const std::string& text);
+
+    IMGUI_API
+    void
     Text(std::string_view text);
 
 
@@ -709,16 +744,31 @@ namespace ImGui {
                 float width,
                 const std::string& text);
 
+    IMGUI_API
+    bool
+    TextAligned(float align,
+                float width,
+                std::string_view text);
+
 
     IMGUI_API
     void
     TextColored(const ImVec4& col,
                 const std::string& text);
 
+    IMGUI_API
+    void
+    TextColored(const ImVec4& col,
+                std::string_view text);
+
 
     IMGUI_API
     void
     TextDisabled(const std::string& text);
+
+    IMGUI_API
+    void
+    TextDisabled(std::string_view text);
 
 
     IMGUI_API
@@ -738,12 +788,20 @@ namespace ImGui {
 
     IMGUI_API
     void
+    TextUnformatted(const std::string& text);
+
+    IMGUI_API
+    void
     TextUnformatted(std::string_view text);
 
 
     IMGUI_API
     void
     TextWrapped(const std::string& text);
+
+    IMGUI_API
+    void
+    TextWrapped(std::string_view text);
 
 
     IMGUI_API
@@ -782,8 +840,19 @@ namespace ImGui {
 
     IMGUI_API
     bool
+    TreeNode(const std::string& str_id,
+             std::string_view label);
+
+
+    IMGUI_API
+    bool
     TreeNode(const void* ptr_id,
              const std::string& label);
+
+    IMGUI_API
+    bool
+    TreeNode(const void* ptr_id,
+             std::string_view label);
 
 
     IMGUI_API
@@ -799,32 +868,26 @@ namespace ImGui {
 
     IMGUI_API
     bool
+    TreeNodeEx(const std::string& str_id,
+               ImGuiTreeNodeFlags flags,
+               std::string_view label);
+
+    IMGUI_API
+    bool
     TreeNodeEx(const void* ptr_id,
                ImGuiTreeNodeFlags flags,
                const std::string& label);
+
+    IMGUI_API
+    bool
+    TreeNodeEx(const void* ptr_id,
+               ImGuiTreeNodeFlags flags,
+               std::string_view label);
 
 
     IMGUI_API
     void
     TreePush(const std::string& str_id);
-
-
-    template<concepts::arithmetic T>
-    IMGUI_API
-    void
-    Value(const std::string& prefix,
-          T value,
-          const std::string& format = "");
-
-    IMGUI_API
-    void
-    Value(const std::string& prefix,
-          bool value);
-
-    IMGUI_API
-    void
-    Value(const std::string& prefix,
-          const std::string& value);
 
 
     template<concepts::arithmetic T>

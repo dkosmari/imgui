@@ -31,72 +31,72 @@ namespace ImGui {
         template<concepts::arithmetic T>
         extern
         const
-        ImGuiDataType data_type_v;
+        ImGuiDataType imgui_data_type_enum;
 
         template<>
         constexpr
-        ImGuiDataType data_type_v<std::int8_t> = ImGuiDataType_S8;
+        ImGuiDataType imgui_data_type_enum<std::int8_t> = ImGuiDataType_S8;
 
         template<>
         constexpr
-        ImGuiDataType data_type_v<std::uint8_t> = ImGuiDataType_U8;
+        ImGuiDataType imgui_data_type_enum<std::uint8_t> = ImGuiDataType_U8;
 
         template<>
         constexpr
-        ImGuiDataType data_type_v<std::int16_t> = ImGuiDataType_S16;
+        ImGuiDataType imgui_data_type_enum<std::int16_t> = ImGuiDataType_S16;
 
         template<>
         constexpr
-        ImGuiDataType data_type_v<std::uint16_t> = ImGuiDataType_U16;
+        ImGuiDataType imgui_data_type_enum<std::uint16_t> = ImGuiDataType_U16;
 
         template<>
         constexpr
-        ImGuiDataType data_type_v<std::int32_t> = ImGuiDataType_S32;
+        ImGuiDataType imgui_data_type_enum<std::int32_t> = ImGuiDataType_S32;
 
         template<>
         constexpr
-        ImGuiDataType data_type_v<std::uint32_t> = ImGuiDataType_U32;
+        ImGuiDataType imgui_data_type_enum<std::uint32_t> = ImGuiDataType_U32;
 
         template<>
         constexpr
-        ImGuiDataType data_type_v<std::int64_t> = ImGuiDataType_S64;
+        ImGuiDataType imgui_data_type_enum<std::int64_t> = ImGuiDataType_S64;
 
         template<>
         constexpr
-        ImGuiDataType data_type_v<std::uint64_t> = ImGuiDataType_U64;
+        ImGuiDataType imgui_data_type_enum<std::uint64_t> = ImGuiDataType_U64;
 
 
         template<>
         constexpr
-        ImGuiDataType data_type_v<char> =
+        ImGuiDataType imgui_data_type_enum<char> =
             std::numeric_limits<char>::is_signed ? ImGuiDataType_S8 : ImGuiDataType_U8;
 
         template<>
         constexpr
-        ImGuiDataType data_type_v<wchar_t> =
+        ImGuiDataType imgui_data_type_enum<wchar_t> =
             std::numeric_limits<wchar_t>::is_signed
             ? (sizeof(wchar_t) == 2 ? ImGuiDataType_S16 : ImGuiDataType_S32)
             : (sizeof(wchar_t) == 2 ? ImGuiDataType_U16 : ImGuiDataType_U32);
 
         template<>
         constexpr
-        ImGuiDataType data_type_v<char8_t> = ImGuiDataType_U8;
+        ImGuiDataType imgui_data_type_enum<char8_t> = ImGuiDataType_U8;
 
         template<>
         constexpr
-        ImGuiDataType data_type_v<char16_t> = ImGuiDataType_U16;
+        ImGuiDataType imgui_data_type_enum<char16_t> = ImGuiDataType_U16;
 
         template<>
         constexpr
-        ImGuiDataType data_type_v<char32_t> = ImGuiDataType_U32;
+        ImGuiDataType imgui_data_type_enum<char32_t> = ImGuiDataType_U32;
 
         template<>
         constexpr
-        ImGuiDataType data_type_v<float> = ImGuiDataType_Float;
+        ImGuiDataType imgui_data_type_enum<float> = ImGuiDataType_Float;
 
         template<>
         constexpr
-        ImGuiDataType data_type_v<double> = ImGuiDataType_Double;
+        ImGuiDataType imgui_data_type_enum<double> = ImGuiDataType_Double;
 
     } // namespace
 
@@ -249,11 +249,32 @@ namespace ImGui {
     }
 
 
+    void
+    BulletText(std::string_view text)
+    {
+        int size = text.size();
+        IM_ASSERT(std::cmp_equal(size, text.size()));
+        BulletText("%.*s", size, text.data());
+    }
+
+
     bool
     Button(const std::string& label,
            const ImVec2& size)
     {
         return Button(label.data(), size);
+    }
+
+
+    ImVec2
+    CalcTextSize(const std::string& text,
+                 bool hide_text_after_double_hash,
+                 float wrap_width)
+    {
+        return CalcTextSize(text.data(),
+                            text.data() + text.size(),
+                            hide_text_after_double_hash,
+                            wrap_width);
     }
 
 
@@ -407,6 +428,15 @@ namespace ImGui {
         else [[unlikely]]
             DebugLog("%s", msg.data());
     }
+
+
+    void
+    DebugLog(std::string_view msg)
+    {
+        int size = msg.size();
+        IM_ASSERT(std::cmp_equal(size, msg.size()));
+        DebugLog("%.*s", size, msg.data());
+    }
 #endif
 
 
@@ -428,7 +458,7 @@ namespace ImGui {
          ImGuiSliderFlags flags)
     {
         return DragScalar(label.data(),
-                          data_type_v<T>,
+                          imgui_data_type_enum<T>,
                           &v,
                           speed,
                           v_min ? &*v_min : nullptr,
@@ -484,7 +514,7 @@ namespace ImGui {
          ImGuiSliderFlags flags)
     {
         return DragScalarN(label.data(),
-                           data_type_v<T>,
+                           imgui_data_type_enum<T>,
                            &v,
                            N,
                            speed,
@@ -570,7 +600,7 @@ namespace ImGui {
           ImGuiInputTextFlags flags)
     {
         return InputScalar(label.data(),
-                           data_type_v<T>,
+                           imgui_data_type_enum<T>,
                            &v,
                            step ? &*step : nullptr,
                            step_fast ? &*step_fast : nullptr,
@@ -623,7 +653,7 @@ namespace ImGui {
           ImGuiInputTextFlags flags)
     {
         return InputScalarN(label.data(),
-                            data_type_v<T>,
+                            imgui_data_type_enum<T>,
                             &v,
                             N,
                             step ? &*step : nullptr,
@@ -823,6 +853,16 @@ namespace ImGui {
     }
 
 
+    void
+    LabelText(const std::string& label,
+              std::string_view text)
+    {
+        int size = text.size();
+        IM_ASSERT(std::cmp_equal(size, text.size()));
+        LabelText(label.data(), "%.*s", size, text.data());
+    }
+
+
     bool
     ListBox(const std::string& label,
             std::size_t& current_item,
@@ -918,6 +958,15 @@ namespace ImGui {
             LogText("%.*s", size, text.data());
         else [[unlikely]]
             LogText("%s", text.data());
+    }
+
+
+    void
+    LogText(std::string_view text)
+    {
+        int size = text.size();
+        IM_ASSERT(std::cmp_equal(size, text.size()));
+        LogText("%.*s", size, text.data());
     }
 
 
@@ -1080,6 +1129,15 @@ namespace ImGui {
 
 
     void
+    SetItemTooltip(std::string_view text)
+    {
+        int size = text.size();
+        IM_ASSERT(std::cmp_equal(size, text.size()));
+        SetItemTooltip("%.*s", size, text.data());
+    }
+
+
+    void
     SetTabItemClosed(const std::string& tab_or_docked_window_label)
     {
         SetTabItemClosed(tab_or_docked_window_label.data());
@@ -1097,6 +1155,15 @@ namespace ImGui {
     }
 
 
+    void
+    SetTooltip(std::string_view text)
+    {
+        int size = text.size();
+        IM_ASSERT(std::cmp_equal(size, text.size()));
+        SetTooltip("%.*s", size, text.data());
+    }
+
+
     template<concepts::arithmetic T>
     bool
     Slider(const std::string& label,
@@ -1107,7 +1174,7 @@ namespace ImGui {
            ImGuiSliderFlags flags)
     {
         return SliderScalar(label.data(),
-                            data_type_v<T>,
+                            imgui_data_type_enum<T>,
                             &v,
                             &v_min,
                             &v_max,
@@ -1160,7 +1227,7 @@ namespace ImGui {
            ImGuiSliderFlags flags)
     {
         return SliderScalarN(label.data(),
-                             data_type_v<T>,
+                             imgui_data_type_enum<T>,
                              &v,
                              N,
                              &v_min,
@@ -1234,9 +1301,18 @@ namespace ImGui {
 
 
     void
+    Text(const std::string& text)
+    {
+        TextUnformatted(text.data(),
+                        text.data() + text.size());
+    }
+
+
+    void
     Text(std::string_view text)
     {
-        TextUnformatted(text);
+        TextUnformatted(text.data(),
+                        text.data() + text.size());
     }
 
 
@@ -1253,14 +1329,36 @@ namespace ImGui {
     }
 
 
+    bool
+    TextAligned(float align,
+                float width,
+                std::string_view text)
+    {
+        int size = text.size();
+        IM_ASSERT(std::cmp_equal(size, text.size()));
+        return TextAligned(align, width, "%.*s", size, text.data());
+    }
+
+
     void
-    TextColored(const ImVec4& col, const std::string& text)
+    TextColored(const ImVec4& col,
+                const std::string& text)
     {
         int size = text.size();
         if (std::cmp_equal(size, text.size()))
             TextColored(col, "%.*s", size, text.data());
         else [[unlikely]]
             TextColored(col, "%s", text.data());
+    }
+
+
+    void
+    TextColored(const ImVec4& col,
+                std::string_view text)
+    {
+        int size = text.size();
+        IM_ASSERT(std::cmp_equal(size, text.size()));
+        TextColored(col, "%.*s", size, text.data());
     }
 
 
@@ -1272,6 +1370,15 @@ namespace ImGui {
             TextDisabled("%.*s", size, text.data());
         else [[unlikely]]
             TextDisabled("%s", text.data());
+    }
+
+
+    void
+    TextDisabled(std::string_view text)
+    {
+        int size = text.size();
+        IM_ASSERT(std::cmp_equal(size, text.size()));
+        TextDisabled("%.*s", size, text.data());
     }
 
 
@@ -1299,6 +1406,14 @@ namespace ImGui {
 
 
     void
+    TextUnformatted(const std::string& text)
+    {
+        TextUnformatted(text.data(),
+                        text.data() + text.size());
+    }
+
+
+    void
     TextUnformatted(std::string_view text)
     {
         TextUnformatted(text.data(),
@@ -1314,6 +1429,15 @@ namespace ImGui {
             TextWrapped("%.*s", size, text.data());
         else [[unlikely]]
             TextWrapped("%s", text.data());
+    }
+
+
+    void
+    TextWrapped(std::string_view text)
+    {
+        int size = text.size();
+        IM_ASSERT(std::cmp_equal(size, text.size()));
+        TextWrapped("%.*s", size, text.data());
     }
 
 
@@ -1344,6 +1468,16 @@ namespace ImGui {
 
 
     bool
+    TreeNode(const std::string& str_id,
+             std::string_view label)
+    {
+        int size = label.size();
+        IM_ASSERT(std::cmp_equal(size, label.size()));
+        return TreeNode(str_id.data(), "%.*s", size, label.data());
+    }
+
+
+    bool
     TreeNode(const void* ptr_id,
              const std::string& label)
     {
@@ -1352,6 +1486,16 @@ namespace ImGui {
             return TreeNode(ptr_id, "%.*s", size, label.data());
         else [[unlikely]]
             return TreeNode(ptr_id, "%s", label.data());
+    }
+
+
+    bool
+    TreeNode(const void* ptr_id,
+             std::string_view label)
+    {
+        int size = label.size();
+        IM_ASSERT(std::cmp_equal(size, label.size()));
+        return TreeNode(ptr_id, "%.*s", size, label.data());
     }
 
 
@@ -1377,6 +1521,17 @@ namespace ImGui {
 
 
     bool
+    TreeNodeEx(const std::string& str_id,
+               ImGuiTreeNodeFlags flags,
+               std::string_view label)
+    {
+        int size = label.size();
+        IM_ASSERT(std::cmp_equal(size, label.size()));
+        return TreeNodeEx(str_id.data(), flags, "%.*s", size, label.data());
+    }
+
+
+    bool
     TreeNodeEx(const void* ptr_id,
                ImGuiTreeNodeFlags flags,
                const std::string& label)
@@ -1389,72 +1544,21 @@ namespace ImGui {
     }
 
 
+    bool
+    TreeNodeEx(const void* ptr_id,
+               ImGuiTreeNodeFlags flags,
+               std::string_view label)
+    {
+        int size = label.size();
+        IM_ASSERT(std::cmp_equal(size, label.size()));
+        return TreeNodeEx(ptr_id, flags, "%.*s", size, label.data());
+    }
+
+
     void
     TreePush(const std::string& str_id)
     {
         return TreePush(str_id.data());
-    }
-
-
-    template<concepts::arithmetic T>
-    void
-    Value(const std::string& prefix,
-          T value,
-          const std::string& format)
-    {
-        if (format.empty())
-            Text("%s: %s",
-                 prefix.data(),
-                 std::to_string(value).data());
-        else
-            Text(("%s: " + format).data(),
-                 prefix.data(),
-                 value);
-    }
-
-    /* -------------------------------------- */
-    /* Explicit instantiations for Value<T>() */
-    /* -------------------------------------- */
-
-#define INSTANTIATE(x)                          \
-    template                                    \
-    void                                        \
-    Value<x>(const std::string& prefix,         \
-             x,                                 \
-             const std::string& format)
-
-    INSTANTIATE(std::int8_t);
-    INSTANTIATE(std::uint8_t);
-    INSTANTIATE(std::int16_t);
-    INSTANTIATE(std::uint16_t);
-    INSTANTIATE(std::int32_t);
-    INSTANTIATE(std::uint32_t);
-    INSTANTIATE(std::int64_t);
-    INSTANTIATE(std::uint64_t);
-    INSTANTIATE(char);
-    INSTANTIATE(wchar_t);
-    INSTANTIATE(char8_t);
-    INSTANTIATE(char16_t);
-    INSTANTIATE(char32_t);
-    INSTANTIATE(float);
-    INSTANTIATE(double);
-
-#undef INSTANTIATE
-
-
-    void
-    Value(const std::string& prefix,
-          bool value)
-    {
-        Value(prefix.data(), value);
-    }
-
-
-    void
-    Value(const std::string& prefix,
-          const std::string& value)
-    {
-        Text("%s: %s", prefix.data(), value.data());
     }
 
 
@@ -1470,7 +1574,7 @@ namespace ImGui {
     {
         return VSliderScalar(label.data(),
                              size,
-                             data_type_v<T>,
+                             imgui_data_type_enum<T>,
                              &variable,
                              &min,
                              &max,
