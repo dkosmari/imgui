@@ -8899,10 +8899,14 @@ void ImGui::ShowStyleEditor(ImGuiStyle* ref)
                     CheckboxFlags("ImGuiHoveredFlags_NoSharedDelay", p, ImGuiHoveredFlags_NoSharedDelay);
                     TreePop();
                 }
+            SliderFloat("HoverDelayShort", &style.HoverDelayShort, 0.0f, 2.0f, "%.2f");
+            SliderFloat("HoverDelayNormal", &style.HoverDelayNormal, 0.0f, 2.0f, "%.2f");
+            SliderFloat("HoverStationaryDelay", &style.HoverStationaryDelay, 0.0f, 2.0f, "%.2f");
 
             SeparatorText("Misc");
             SliderFloat2("DisplayWindowPadding", (float*)&style.DisplayWindowPadding, 0.0f, 30.0f, "%.0f"); SameLine(); HelpMarker("Apply to regular windows: amount which we enforce to keep visible when moving near edges of your screen.");
             SliderFloat2("DisplaySafeAreaPadding", (float*)&style.DisplaySafeAreaPadding, 0.0f, 30.0f, "%.0f"); SameLine(); HelpMarker("Apply to every windows, menus, popups, tooltips: amount where we avoid displaying contents. Adjust if you cannot see the edges of your screen (e.g. on a TV where scaling has not been configured).");
+            SliderFloat("InputTextCursorSize", &style.InputTextCursorSize, 1.0f, 5.0f, "%.0f");
 
             EndTabItem();
         }
