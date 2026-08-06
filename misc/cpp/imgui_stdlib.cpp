@@ -128,6 +128,15 @@ namespace ImGui {
 
 
     bool
+    Begin(const std::string& name,
+          bool& open,
+          ImGuiWindowFlags flags)
+    {
+        return Begin(name.data(), &open, flags);
+    }
+
+
+    bool
     BeginChild(const std::string& str_id,
                const ImVec2& size,
                ImGuiChildFlags child_flags,
@@ -207,6 +216,15 @@ namespace ImGui {
 
 
     bool
+    BeginPopupModal(const std::string& name,
+                    bool& open,
+                    ImGuiWindowFlags flags)
+    {
+        return BeginPopupModal(name.data(), &open, flags);
+    }
+
+
+    bool
     BeginTabBar(const std::string& id,
                 ImGuiTabBarFlags flags)
     {
@@ -220,6 +238,15 @@ namespace ImGui {
                  ImGuiTabItemFlags flags)
     {
         return BeginTabItem(label.data(), p_open, flags);
+    }
+
+
+    bool
+    BeginTabItem(const std::string& label,
+                 bool& open,
+                 ImGuiTabItemFlags flags)
+    {
+        return BeginTabItem(label.data(), &open, flags);
     }
 
 
@@ -292,11 +319,18 @@ namespace ImGui {
 
     bool
     Checkbox(const std::string& label,
+             bool* p_value)
+    {
+        return Checkbox(label.data(), p_value);
+    }
+
+
+    bool
+    Checkbox(const std::string& label,
              bool& value)
     {
         return Checkbox(label.data(), &value);
     }
-
 
 
     template<std::integral I>
@@ -365,6 +399,15 @@ namespace ImGui {
                      ImGuiTreeNodeFlags flags)
     {
         return CollapsingHeader(label.data(), p_visible, flags);
+    }
+
+
+    bool
+    CollapsingHeader(const std::string& label,
+                     bool& visible,
+                     ImGuiTreeNodeFlags flags)
+    {
+        return CollapsingHeader(label.data(), &visible, flags);
     }
 
 
@@ -1005,6 +1048,19 @@ namespace ImGui {
 
 
     bool
+    MenuItem(const std::string& label,
+             const std::string& shortcut,
+             std::reference_wrapper<bool> selected,
+             bool enabled)
+    {
+        return MenuItem(label.data(),
+                        shortcut.empty() ? nullptr : shortcut.data(),
+                        &selected.get(),
+                        enabled);
+    }
+
+
+    bool
     OpenPopup(const std::string& str_id,
               ImGuiPopupFlags popup_flags)
     {
@@ -1086,7 +1142,23 @@ namespace ImGui {
                ImGuiSelectableFlags flags,
                const ImVec2& size)
     {
-        return Selectable(label.data(), p_selected, flags, size);
+        return Selectable(label.data(),
+                          p_selected,
+                          flags,
+                          size);
+    }
+
+
+    bool
+    Selectable(const std::string& label,
+               std::reference_wrapper<bool> selected,
+               ImGuiSelectableFlags flags,
+               const ImVec2& size)
+    {
+        return Selectable(label.data(),
+                          &selected.get(),
+                          flags,
+                          size);
     }
 
 

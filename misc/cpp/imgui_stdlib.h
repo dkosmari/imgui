@@ -85,6 +85,13 @@ namespace ImGui {
 
     IMGUI_API
     bool
+    Begin(const std::string& name,
+          bool& open,
+          ImGuiWindowFlags flags = 0);
+
+
+    IMGUI_API
+    bool
     BeginChild(const std::string& str_id,
                const ImVec2& size = {0, 0},
                ImGuiChildFlags child_flags = 0,
@@ -140,6 +147,12 @@ namespace ImGui {
                     bool* p_open = nullptr,
                     ImGuiWindowFlags flags = 0);
 
+    IMGUI_API
+    bool
+    BeginPopupModal(const std::string& name,
+                    bool& open,
+                    ImGuiWindowFlags flags = 0);
+
 
     IMGUI_API
     bool
@@ -153,13 +166,19 @@ namespace ImGui {
                  bool* p_open = nullptr,
                  ImGuiTabItemFlags flags = 0);
 
+    IMGUI_API
+    bool
+    BeginTabItem(const std::string& label,
+                 bool& open,
+                 ImGuiTabItemFlags flags = 0);
+
 
     IMGUI_API
     bool
     BeginTable(const std::string& id,
                int columns,
                ImGuiTableFlags flags = 0,
-               const ImVec2& outer_size = {},
+               const ImVec2& outer_size = {0, 0},
                float inner_width = 0);
 
 
@@ -194,6 +213,11 @@ namespace ImGui {
     IMGUI_API
     bool
     Checkbox(const std::string& label,
+             bool* p_value);
+
+    IMGUI_API
+    bool
+    Checkbox(const std::string& label,
              bool& value);
 
 
@@ -222,6 +246,12 @@ namespace ImGui {
     bool
     CollapsingHeader(const std::string& label,
                      bool* p_visible,
+                     ImGuiTreeNodeFlags flags = 0);
+
+    IMGUI_API
+    bool
+    CollapsingHeader(const std::string& label,
+                     bool& visible,
                      ImGuiTreeNodeFlags flags = 0);
 
 
@@ -563,6 +593,13 @@ namespace ImGui {
              bool* p_selected,
              bool enabled = true);
 
+    IMGUI_API
+    bool
+    MenuItem(const std::string& label,
+             const std::string& shortcut,
+             std::reference_wrapper<bool> selected,
+             bool enabled = true);
+
 
     IMGUI_API
     bool
@@ -633,6 +670,13 @@ namespace ImGui {
     bool
     Selectable(const std::string& label,
                bool* p_selected,
+               ImGuiSelectableFlags flags = 0,
+               const ImVec2& size = {0, 0});
+
+    IMGUI_API
+    bool
+    Selectable(const std::string& label,
+               std::reference_wrapper<bool> selected,
                ImGuiSelectableFlags flags = 0,
                const ImVec2& size = {0, 0});
 
