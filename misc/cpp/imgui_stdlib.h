@@ -59,8 +59,9 @@ namespace ImGui {
 
     using InputTextFunction = std::function<void (ImGuiInputTextCallbackData*)>;
 
-
     using ListBoxGetterFunction = std::function<std::string (std::size_t idx)>;
+
+    using PlotValueGetterFunction = std::function<float (std::size_t idx)>;
 
 
     IMGUI_API
@@ -483,7 +484,7 @@ namespace ImGui {
     bool
     InputTextMultiline(const std::string& label,
                        std::string& value,
-                       const ImVec2& size = ImVec2(0, 0),
+                       const ImVec2& size = {0, 0},
                        ImGuiInputTextFlags flags = 0,
                        const InputTextFunction& func = {});
 
@@ -491,7 +492,7 @@ namespace ImGui {
     bool
     InputTextMultiline(const std::string& label,
                        std::string* value,
-                       const ImVec2& size = ImVec2(0, 0),
+                       const ImVec2& size = {0, 0},
                        ImGuiInputTextFlags flags = 0,
                        const InputTextFunction& func = {});
 
@@ -613,10 +614,48 @@ namespace ImGui {
                          ImGuiPopupFlags popup_flags = 0);
 
 
-    // TODO: PlotLines()
+    IMGUI_API
+    void
+    PlotLines(const std::string& label,
+              std::span<const float> values,
+              int values_offset = 0,
+              const std::optional<std::string>& overlay_text = {},
+              float scale_min = FLT_MAX,
+              float scale_max = FLT_MAX,
+              ImVec2 graph_size = {0, 0});
+
+    IMGUI_API
+    void
+    PlotLines(const std::string& label,
+              const PlotValueGetterFunction& getter,
+              std::size_t values_count,
+              int values_offset = 0,
+              const std::optional<std::string>& overlay_text = {},
+              float scale_min = FLT_MAX,
+              float scale_max = FLT_MAX,
+              ImVec2 graph_size = {0, 0});
 
 
-    // TODO: PlotHistorgram()
+    IMGUI_API
+    void
+    PlotHistogram(const std::string& label,
+                  std::span<const float> values,
+                  int values_offset = 0,
+                  const std::optional<std::string>& overlay_text = {},
+                  float scale_min = FLT_MAX,
+                  float scale_max = FLT_MAX,
+                  ImVec2 graph_size = {0, 0});
+
+    IMGUI_API
+    void
+    PlotHistogram(const std::string& label,
+                  const PlotValueGetterFunction& getter,
+                  std::size_t values_count,
+                  int values_offset = 0,
+                  const std::optional<std::string>& overlay_text = {},
+                  float scale_min = FLT_MAX,
+                  float scale_max = FLT_MAX,
+                  ImVec2 graph_size = {0, 0});
 
 
     IMGUI_API

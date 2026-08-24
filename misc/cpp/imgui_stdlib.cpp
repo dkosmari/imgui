@@ -764,7 +764,7 @@ namespace ImGui {
                     IM_ASSERT(data->Buf == str.data());
                     str.resize(data->BufTextLen);
                     data->Buf = str.data();
-                } else if (*user_data->func)
+                } else
                     (*user_data->func)(data);
                 return 0;
             }
@@ -944,10 +944,8 @@ namespace ImGui {
                 std::size_t idx = idx_;
                 const char* result = nullptr;
                 try {
-                    if (*ctx->getter) {
-                        ctx->last_result = (*ctx->getter)(idx);
-                        result = ctx->last_result.data();
-                    }
+                    ctx->last_result = (*ctx->getter)(idx);
+                    result = ctx->last_result.data();
                 }
                 catch (std::exception& e) {
                     IMGUI_DEBUG_LOG("leaked an exception: %s", e.what());
@@ -1073,6 +1071,113 @@ namespace ImGui {
                          ImGuiPopupFlags popup_flags)
     {
         return OpenPopupOnItemClick(str_id.empty() ? nullptr : str_id.data(), popup_flags);
+    }
+
+
+    void
+    PlotLines(const std::string& label,
+              std::span<const float> values,
+              int values_offset,
+              const std::optional<std::string>& overlay_text,
+              float scale_min,
+              float scale_max,
+              ImVec2 graph_size)
+    {
+        PlotLines(label.data(),
+                  values.data(),
+                  values.size(),
+                  values_offset,
+                  overlay_text ? overlay_text->data() : nullptr,
+                  scale_min,
+                  scale_max,
+                  graph_size);
+    }
+
+
+    namespace {
+
+        namespace PlotHelper {
+
+            float
+            getter_wrapper(const void* ctx,
+                           int index)
+            {
+                IM_ASSERT(ctx);
+                auto getter = reinterpret_cast<const PlotValueGetterFunction*>(ctx);
+                try {
+                    return (*getter)(index);
+                }
+                catch (std::exception& e) {
+                    IMGUI_DEBUG_LOG("leaked an exception: %s", e.what());
+                    return 0;
+                }
+            }
+
+        };
+
+    } // namespace
+
+    void
+    PlotLines(const std::string& label,
+              const PlotValueGetterFunction& getter,
+              std::size_t values_count,
+              int values_offset,
+              const std::optional<std::string>& overlay_text,
+              float scale_min,
+              float scale_max,
+              ImVec2 graph_size)
+    {
+        PlotLines(label.data(),
+                  PlotHelper::getter_wrapper,
+                  &getter,
+                  values_count,
+                  values_offset,
+                  overlay_text ? overlay_text->data() : nullptr,
+                  scale_min,
+                  scale_max,
+                  graph_size);
+    }
+
+
+    void
+    PlotHistogram(const std::string& label,
+                  std::span<const float> values,
+                  int values_offset,
+                  const std::optional<std::string>& overlay_text,
+                  float scale_min,
+                  float scale_max,
+                  ImVec2 graph_size)
+    {
+        PlotHistogram(label.data(),
+                      values.data(),
+                      values.size(),
+                      values_offset,
+                      overlay_text ? overlay_text->data() : nullptr,
+                      scale_min,
+                      scale_max,
+                      graph_size);
+    }
+
+
+    void
+    PlotHistogram(const std::string& label,
+                  const PlotValueGetterFunction& getter,
+                  std::size_t values_count,
+                  int values_offset,
+                  const std::optional<std::string>& overlay_text,
+                  float scale_min,
+                  float scale_max,
+                  ImVec2 graph_size)
+    {
+        PlotHistogram(label.data(),
+                      PlotHelper::getter_wrapper,
+                      &getter,
+                      values_count,
+                      values_offset,
+                      overlay_text ? overlay_text->data() : nullptr,
+                      scale_min,
+                      scale_max,
+                      graph_size);
     }
 
 
