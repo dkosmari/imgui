@@ -183,10 +183,11 @@ namespace ImGui::RAII {
 
         explicit
         Font(ImFont* font,
-             float size)
+             float size = 0.0f,
+             float scale = 0.0f)
             noexcept
         {
-            PushFont(font, size);
+            PushFont(font, size, scale);
         }
 
         ~Font()

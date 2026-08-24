@@ -9581,7 +9581,7 @@ void ImGui::SetFontRasterizerDensity(float rasterizer_density)
 }
 
 // If you want to scale an existing font size! Read comments in imgui.h!
-void ImGui::PushFont(ImFont* font, float font_size_base)
+void ImGui::PushFont(ImFont* font, float font_size_base, float font_size_scale)
 {
     ImGuiContext& g = *GImGui;
     if (font == NULL) // Before 1.92 (June 2025), PushFont(NULL) == PushFont(GetDefaultFont())
@@ -9592,6 +9592,8 @@ void ImGui::PushFont(ImFont* font, float font_size_base)
     g.FontStack.push_back({ g.Font, g.FontSizeBase, g.FontSize });
     if (font_size_base == 0.0f)
         font_size_base = g.FontSizeBase; // Keep current font size
+    if (font_size_scale != 0.0f)
+        font_size_base *= font_size_scale;
     SetCurrentFont(font, font_size_base, 0.0f);
 }
 
