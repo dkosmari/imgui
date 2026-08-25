@@ -8,6 +8,10 @@
 
 #pragma once
 
+#include <concepts>
+#include <format>
+#include <string_view>
+#include <type_traits>
 #include <utility>
 
 #ifndef IMGUI_DISABLE
@@ -20,6 +24,13 @@
 namespace ImGui::RAII {
 
     namespace detail {
+
+        namespace concepts {
+
+            template<typename T>
+            concept string = std::convertible_to<std::decay_t<T>, std::string_view>;
+
+        } // namespace concepts
 
         struct Immovable {
 
@@ -37,6 +48,7 @@ namespace ImGui::RAII {
 
             const bool status;
 
+            explicit
             Conditional(bool s)
                 noexcept :
                 status{s}
@@ -59,7 +71,6 @@ namespace ImGui::RAII {
     struct Child : detail::Conditional {
 
         template<typename T>
-        explicit
         Child(T&& str_id,
               const ImVec2& size = {0, 0},
               ImGuiChildFlags child_flags = 0,
@@ -83,7 +94,6 @@ namespace ImGui::RAII {
 
     struct ClipRect : detail::Immovable {
 
-        explicit
         ClipRect(const ImVec2& min,
                  const ImVec2& max,
                  bool intersect)
@@ -105,7 +115,6 @@ namespace ImGui::RAII {
 
         template<typename T,
                  typename U>
-        explicit
         Combo(T&& label,
               U&& preview,
               ImGuiComboFlags flags = 0)
@@ -127,7 +136,6 @@ namespace ImGui::RAII {
 
     struct Disabled : detail::Immovable {
 
-        explicit
         Disabled(bool disabled = true)
             noexcept
         {
@@ -145,7 +153,6 @@ namespace ImGui::RAII {
 
     struct DragDropSource : detail::Conditional {
 
-        explicit
         DragDropSource(ImGuiDragDropFlags flags = 0)
             noexcept :
             detail::Conditional{BeginDragDropSource(flags)}
@@ -163,7 +170,6 @@ namespace ImGui::RAII {
 
     struct DragDropTarget : detail::Conditional {
 
-        explicit
         DragDropTarget()
             noexcept :
             detail::Conditional{BeginDragDropTarget()}
@@ -181,7 +187,6 @@ namespace ImGui::RAII {
 
     struct Font : detail::Immovable {
 
-        explicit
         Font(ImFont* font,
              float size = 0.0f,
              float scale = 0.0f)
@@ -201,7 +206,6 @@ namespace ImGui::RAII {
 
     struct Group : detail::Immovable {
 
-        explicit
         Group()
             noexcept
         {
@@ -220,7 +224,6 @@ namespace ImGui::RAII {
     struct ID : detail::Immovable {
 
         template<typename... Args>
-        explicit
         ID(Args&&... args)
             noexcept
         {
@@ -242,7 +245,6 @@ namespace ImGui::RAII {
 
     public:
 
-        explicit
         Indent(float amount = 0)
             noexcept :
             width(amount)
@@ -261,7 +263,6 @@ namespace ImGui::RAII {
 
     struct ItemFlag : detail::Immovable {
 
-        explicit
         ItemFlag(ImGuiItemFlags opt,
                  bool enabled)
             noexcept
@@ -280,7 +281,6 @@ namespace ImGui::RAII {
 
     struct ItemTooltip : detail::Conditional {
 
-        explicit
         ItemTooltip()
             noexcept :
             detail::Conditional{BeginItemTooltip()}
@@ -298,7 +298,6 @@ namespace ImGui::RAII {
 
     struct ItemWidth : detail::Immovable {
 
-        explicit
         ItemWidth(float width)
             noexcept
         {
@@ -317,7 +316,6 @@ namespace ImGui::RAII {
     struct ListBox : detail::Conditional {
 
         template<typename T>
-        explicit
         ListBox(T&& label,
                 const ImVec2& size = {0, 0})
             noexcept :
@@ -337,7 +335,6 @@ namespace ImGui::RAII {
 
     struct MainMenuBar : detail::Conditional {
 
-        explicit
         MainMenuBar()
             noexcept :
              detail::Conditional{BeginMainMenuBar()}
@@ -356,7 +353,6 @@ namespace ImGui::RAII {
     struct Menu : detail::Conditional {
 
         template<typename T>
-        explicit
         Menu(T&& label,
              bool enabled = true)
             noexcept :
@@ -376,7 +372,6 @@ namespace ImGui::RAII {
 
     struct MenuBar : detail::Conditional {
 
-        explicit
         MenuBar()
             noexcept :
             detail::Conditional{BeginMenuBar()}
@@ -398,7 +393,6 @@ namespace ImGui::RAII {
 
     public:
 
-        explicit
         MultiSelect(ImGuiMultiSelectFlags flags,
                     int selection_size = -1,
                     int items_count = -1)
@@ -424,7 +418,6 @@ namespace ImGui::RAII {
     struct Popup : detail::Conditional {
 
         template<typename T>
-        explicit
         Popup(T&& str_id,
               ImGuiWindowFlags flags = 0)
             noexcept :
@@ -444,14 +437,12 @@ namespace ImGui::RAII {
 
     struct PopupContextItem : detail::Conditional {
 
-        explicit
         PopupContextItem()
             noexcept :
             detail::Conditional{BeginPopupContextItem()}
         {}
 
         template<typename T>
-        explicit
         PopupContextItem(T&& str_id,
                          ImGuiPopupFlags popup_flags = 0)
             noexcept :
@@ -471,14 +462,12 @@ namespace ImGui::RAII {
 
     struct PopupContextWindow : detail::Conditional {
 
-        explicit
         PopupContextWindow()
             noexcept :
             detail::Conditional{BeginPopupContextWindow()}
         {}
 
         template<typename T>
-        explicit
         PopupContextWindow(T&& str_id,
                            ImGuiPopupFlags popup_flags = 0)
             noexcept :
@@ -498,14 +487,12 @@ namespace ImGui::RAII {
 
     struct PopupContextVoid : detail::Conditional {
 
-        explicit
         PopupContextVoid()
             noexcept :
             detail::Conditional{BeginPopupContextVoid()}
         {}
 
         template<typename T>
-        explicit
         PopupContextVoid(T&& str_id,
                          ImGuiPopupFlags popup_flags = 0)
             noexcept :
@@ -526,7 +513,6 @@ namespace ImGui::RAII {
     struct PopupModal : detail::Conditional {
 
         template<typename T>
-        explicit
         PopupModal(T&& name,
                    bool* p_open = nullptr,
                    ImGuiWindowFlags flags = 0)
@@ -547,7 +533,6 @@ namespace ImGui::RAII {
 
     struct StyleColor : detail::Immovable {
 
-        explicit
         StyleColor(ImGuiCol idx,
                    ImU32 col)
             noexcept
@@ -555,7 +540,6 @@ namespace ImGui::RAII {
             PushStyleColor(idx, col);
         }
 
-        explicit
         StyleColor(ImGuiCol idx,
                    const ImVec4& col)
             noexcept
@@ -574,7 +558,6 @@ namespace ImGui::RAII {
 
     struct StyleVar : detail::Immovable {
 
-        explicit
         StyleVar(ImGuiStyleVar idx,
                  float val)
             noexcept
@@ -582,7 +565,6 @@ namespace ImGui::RAII {
             PushStyleVar(idx, val);
         }
 
-        explicit
         StyleVar(ImGuiStyleVar idx,
                  const ImVec2& val)
             noexcept
@@ -601,7 +583,6 @@ namespace ImGui::RAII {
 
     struct StyleVarX : detail::Immovable {
 
-        explicit
         StyleVarX(ImGuiStyleVar idx,
                   float x)
             noexcept
@@ -620,7 +601,6 @@ namespace ImGui::RAII {
 
     struct StyleVarY : detail::Immovable {
 
-        explicit
         StyleVarY(ImGuiStyleVar idx,
                   float y)
             noexcept
@@ -640,7 +620,6 @@ namespace ImGui::RAII {
     struct TabBar : detail::Conditional {
 
         template<typename T>
-        explicit
         TabBar(T&& str_id,
                ImGuiTabBarFlags flags = 0)
             noexcept :
@@ -661,7 +640,6 @@ namespace ImGui::RAII {
     struct TabItem : detail::Conditional {
 
         template<typename T>
-        explicit
         TabItem(T&& label,
                 bool* p_open = nullptr,
                 ImGuiTabItemFlags flags = 0)
@@ -672,7 +650,6 @@ namespace ImGui::RAII {
         {}
 
         template<typename T>
-        explicit
         TabItem(T&& label,
                 bool& open,
                 ImGuiTabItemFlags flags = 0)
@@ -695,7 +672,6 @@ namespace ImGui::RAII {
     struct Table : detail::Conditional {
 
         template<typename T>
-        explicit
         Table(T&& str_id,
               int columns,
               ImGuiTableFlags flags = 0,
@@ -721,7 +697,6 @@ namespace ImGui::RAII {
 
     struct TextWrapPos : detail::Immovable {
 
-        explicit
         TextWrapPos(float pos = 0.0f)
             noexcept
         {
@@ -739,7 +714,6 @@ namespace ImGui::RAII {
 
     struct Tooltip : detail::Conditional {
 
-        explicit
         Tooltip()
             noexcept :
             detail::Conditional{BeginTooltip()}
@@ -755,10 +729,154 @@ namespace ImGui::RAII {
     }; // struct Tooltip
 
 
+    struct TreeNode : detail::Conditional {
+
+        template<detail::concepts::string Str>
+        TreeNode(Str&& label)
+            noexcept :
+            detail::Conditional{ImGui::TreeNode(std::forward<Str>(label))}
+        {}
+
+        template<detail::concepts::string Str1,
+                 detail::concepts::string Str2>
+        TreeNode(Str1&& str_id,
+                 Str2&& label)
+            noexcept :
+            detail::Conditional{
+                ImGui::TreeNode(std::forward<Str1>(str_id),
+                                std::forward<Str2>(label))
+            }
+        {}
+
+        template<detail::concepts::string Str>
+        TreeNode(const void* ptr_id,
+                 Str&& label)
+            noexcept :
+            detail::Conditional{
+                ImGui::TreeNode(ptr_id,
+                                std::forward<Str>(label))
+            }
+        {}
+
+        template<detail::concepts::string Str>
+        TreeNode(Str&& label,
+                 ImGuiTreeNodeFlags flags)
+            noexcept :
+            detail::Conditional{
+                ImGui::TreeNodeEx(std::forward<Str>(label),
+                                  flags)
+            }
+        {}
+
+        template<detail::concepts::string Str1,
+                 detail::concepts::string Str2>
+        TreeNode(Str1&& str_id,
+                 ImGuiTreeNodeFlags flags,
+                 Str2&& label)
+            noexcept :
+            detail::Conditional{
+                ImGui::TreeNodeEx(std::forward<Str1>(str_id),
+                                  flags,
+                                  std::forward<Str2>(label))
+            }
+        {}
+
+        template<detail::concepts::string Str>
+        TreeNode(const void* ptr_id,
+                 ImGuiTreeNodeFlags flags,
+                 Str&& label)
+            noexcept :
+            detail::Conditional{
+                ImGui::TreeNodeEx(ptr_id,
+                                  flags,
+                                  std::forward<Str>(label))
+            }
+        {}
+
+        ~TreeNode()
+            noexcept
+        {
+            if (status)
+                TreePop();
+        }
+
+        // Named constructors for formatting
+
+        template<detail::concepts::string Str,
+                 typename... Args>
+        static
+        TreeNode
+        format(Str&& str_id,
+               std::format_string<Args...> fmt,
+               Args&&... args)
+        {
+            return TreeNode{
+                ImGui::FormatTreeNode(std::forward<Str>(str_id),
+                                      std::move(fmt),
+                                      std::forward<Args>(args)...)
+            };
+        }
+
+        template<typename... Args>
+        static
+        TreeNode
+        format(const void* ptr_id,
+               std::format_string<Args...> fmt,
+               Args&&... args)
+        {
+            return TreeNode{
+                ImGui::FormatTreeNode(ptr_id,
+                                      std::move(fmt),
+                                      std::forward<Args>(args)...)
+            };
+        }
+
+        template<detail::concepts::string Str,
+                 typename... Args>
+        static
+        TreeNode
+        format(Str&& str_id,
+               ImGuiTreeNodeFlags flags,
+               std::format_string<Args...> fmt,
+               Args&&... args)
+        {
+            return TreeNode{
+                ImGui::FormatTreeNodeEx(std::forward<Str>(str_id),
+                                        flags,
+                                        std::move(fmt),
+                                        std::forward<Args>(args)...)
+            };
+        }
+
+        template<typename... Args>
+        static
+        TreeNode
+        format(const void* ptr_id,
+               ImGuiTreeNodeFlags flags,
+               std::format_string<Args...> fmt,
+               Args&&... args)
+        {
+            return TreeNode{
+                ImGui::FormatTreeNodeEx(ptr_id,
+                                        flags,
+                                        std::move(fmt),
+                                        std::forward<Args>(args)...)
+            };
+        }
+
+    private:
+
+        explicit
+        TreeNode(bool v) :
+            detail::Conditional{v}
+        {}
+
+    }; // struct TreeNode
+
+
     struct Window : detail::Conditional {
 
         template<typename T>
-        explicit
         Window(T&& name,
                bool* p_open = nullptr,
                ImGuiWindowFlags flags = 0)
@@ -769,7 +887,6 @@ namespace ImGui::RAII {
         {}
 
         template<typename T>
-        explicit
         Window(T&& name,
                bool& open,
                ImGuiWindowFlags flags = 0)
