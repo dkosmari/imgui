@@ -397,27 +397,27 @@ namespace ImGui {
 
 
     template<typename... Args>
-    void
+    bool
     FormatTreeNode(const std::string& str_id,
                    std::format_string<Args...> fmt,
                    Args&&... args);
 
     template<typename... Args>
-    void
+    bool
     FormatTreeNode(const void* ptr_id,
                    std::format_string<Args...> fmt,
                    Args&&... args);
 
 
     template<typename... Args>
-    void
+    bool
     FormatTreeNodeEx(const std::string& str_id,
                      ImGuiTreeNodeFlags flags,
                      std::format_string<Args...> fmt,
                      Args&&... args);
 
     template<typename... Args>
-    void
+    bool
     FormatTreeNodeEx(const void* ptr_id,
                      ImGuiTreeNodeFlags flags,
                      std::format_string<Args...> fmt,
@@ -1133,57 +1133,57 @@ namespace ImGui {
 
     template<typename... Args>
     inline
-    void
+    bool
     FormatTreeNode(const std::string& str_id,
                    std::format_string<Args...> fmt,
                    Args&&... args)
     {
-        TreeNode(str_id,
-                 std::format(std::move(fmt),
-                             std::forward<Args>(args)...));
+        return TreeNode(str_id,
+                        std::format(std::move(fmt),
+                                    std::forward<Args>(args)...));
     }
 
 
     template<typename... Args>
     inline
-    void
+    bool
     FormatTreeNode(const void* ptr_id,
                    std::format_string<Args...> fmt,
                    Args&&... args)
     {
-        TreeNode(ptr_id,
-                 std::format(std::move(fmt),
-                             std::forward<Args>(args)...));
+        return TreeNode(ptr_id,
+                        std::format(std::move(fmt),
+                                    std::forward<Args>(args)...));
     }
 
 
     template<typename... Args>
     inline
-    void
+    bool
     FormatTreeNodeEx(const std::string& str_id,
                      ImGuiTreeNodeFlags flags,
                      std::format_string<Args...> fmt,
                      Args&&... args)
     {
-        TreeNodeEx(str_id,
-                   flags,
-                   std::format(std::move(fmt),
-                               std::forward<Args>(args)...));
+        return TreeNodeEx(str_id,
+                          flags,
+                          std::format(std::move(fmt),
+                                      std::forward<Args>(args)...));
     }
 
 
     template<typename... Args>
     inline
-    void
+    bool
     FormatTreeNodeEx(const void* ptr_id,
                      ImGuiTreeNodeFlags flags,
                      std::format_string<Args...> fmt,
                      Args&&... args)
     {
-        TreeNodeEx(ptr_id,
-                   flags,
-                   std::format(std::move(fmt),
-                               std::forward<Args>(args)...));
+        return TreeNodeEx(ptr_id,
+                          flags,
+                          std::format(std::move(fmt),
+                                      std::forward<Args>(args)...));
     }
 
 
