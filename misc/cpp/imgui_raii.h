@@ -10,7 +10,6 @@
 
 #include <concepts>
 #include <format>
-#include <string_view>
 #include <type_traits>
 #include <utility>
 
@@ -28,7 +27,7 @@ namespace ImGui::RAII {
         namespace concepts {
 
             template<typename T>
-            concept string = std::convertible_to<std::decay_t<T>, std::string_view>;
+            concept string = std::convertible_to<std::decay_t<T>, std::string>;
 
         } // namespace concepts
 
