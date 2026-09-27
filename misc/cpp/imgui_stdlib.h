@@ -681,11 +681,12 @@ namespace ImGui {
                 bool active);
 
 
-    template<typename T>
+    template<typename T,
+             typename U>
     bool
     RadioButton(const std::string& label,
                 T& variable,
-                T reference);
+                U reference);
 
 
     IMGUI_API
@@ -1187,12 +1188,13 @@ namespace ImGui {
     }
 
 
-    template<typename T>
+    template<typename T,
+             typename U>
     inline
     bool
     RadioButton(const std::string& label,
                 T& variable,
-                T reference)
+                U reference)
     {
         bool result = RadioButton(label, variable == reference);
         if (result)
