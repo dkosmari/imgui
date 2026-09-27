@@ -21,14 +21,19 @@ CPPFLAGS := \
 	-I$(WUT_ROOT)/include \
 	-DIMGUI_DISABLE_DEFAULT_SHELL_FUNCTIONS \
 	-DIMGUI_DEMO_CAROUSEL \
-	-DIMGUI_DISABLE_DEFAULT_FONT
+	-DIMGUI_DISABLE_DEFAULT_FONT \
+	-DIMGUI_DISABLE_OBSOLETE_FUNCTIONS
 
-CXXFLAGS := \
+COMMON_FLAGS := \
 	-Wall -Wextra -Werror \
 	-Os \
 	-ffunction-sections \
 	-fdata-sections \
 	$(MACHDEP)
+
+CFLAGS := $(COMMON_FLAGS)
+
+CXXFLAGS := $(COMMON_FLAGS)
 
 LDFLAGS := $(ARCH) $(RPXSPECS)
 
@@ -46,7 +51,7 @@ RPX_FILE := $(TARGET).rpx
 
 SOURCES := \
 	main.cpp \
-	wiiu-stdout.cpp \
+	wiiu-stdout.c \
 	$(IMGUI_DIR)/imgui.cpp \
 	$(IMGUI_DIR)/imgui_demo.cpp \
 	$(IMGUI_DIR)/imgui_draw.cpp \
@@ -70,6 +75,9 @@ clean:
 	$(RM) $(ELF_FILE)
 	$(RM) $(OBJECTS)
 
+
+%.o: %.c
+	$(CC) -o $@ -c $< $(CPPFLAGS) $(CFLAGS)
 
 %.o: %.cpp
 	$(CXX) -o $@ -c $< $(CPPFLAGS) $(CXXFLAGS)

@@ -91,12 +91,44 @@ struct ImGui_ImplGX2_Texture
     {
         GX2RUnlockSurfaceEx(&Texture.surface, 0, GX2R_RESOURCE_BIND_NONE);
     }
+
+    void SetLinear()
+    {
+        GX2InitSamplerXYFilter(&Sampler,
+                               GX2_TEX_XY_FILTER_MODE_LINEAR,
+                               GX2_TEX_XY_FILTER_MODE_LINEAR,
+                               GX2_TEX_ANISO_RATIO_NONE);
+    }
+
+    void SetNearest()
+    {
+        GX2InitSamplerXYFilter(&Sampler,
+                               GX2_TEX_XY_FILTER_MODE_POINT,
+                               GX2_TEX_XY_FILTER_MODE_POINT,
+                               GX2_TEX_ANISO_RATIO_NONE);
+    }
 };
 
 // Backend data stored in io.BackendRendererUserData
 static ImGui_ImplGX2_Data* ImGui_ImplGX2_GetBackendData()
 {
     return ImGui::GetCurrentContext() ? (ImGui_ImplGX2_Data*)ImGui::GetIO().BackendRendererUserData : NULL;
+}
+
+// Intentionally empty, used as an identifier in the rendering loop.
+static void ImGui_ImplGX2_DrawCallback_ResetRenderState(const ImDrawList*, const ImDrawCmd*)
+{}
+
+static void ImGui_ImplGX2_DrawCallback_SetSamplerLinear(const ImDrawList*, const ImDrawCmd* cmd)
+{
+    ImGui_ImplGX2_Texture* tex = reinterpret_cast<ImGui_ImplGX2_Texture*>(cmd->GetTexID());
+    tex->SetLinear();
+}
+
+static void ImGui_ImplGX2_DrawCallback_SetSamplerNearest(const ImDrawList*, const ImDrawCmd* cmd)
+{
+    ImGui_ImplGX2_Texture* tex = reinterpret_cast<ImGui_ImplGX2_Texture*>(cmd->GetTexID());
+    tex->SetNearest();
 }
 
 // Functions
@@ -111,6 +143,11 @@ bool ImGui_ImplGX2_Init()
 
     io.BackendFlags |= ImGuiBackendFlags_RendererHasVtxOffset;  // We can honor the ImDrawCmd::VtxOffset field, allowing for large meshes.
     io.BackendFlags |= ImGuiBackendFlags_RendererHasTextures;   // We can honor ImGuiPlatformIO::Textures[] requests during render.
+
+    ImGuiPlatformIO& platform_io = ImGui::GetPlatformIO();
+    platform_io.DrawCallback_ResetRenderState = ImGui_ImplGX2_DrawCallback_ResetRenderState;
+    platform_io.DrawCallback_SetSamplerLinear = ImGui_ImplGX2_DrawCallback_SetSamplerLinear;
+    platform_io.DrawCallback_SetSamplerNearest = ImGui_ImplGX2_DrawCallback_SetSamplerNearest;
 
     return true;
 }
@@ -221,7 +258,7 @@ void ImGui_ImplGX2_RenderDrawData(ImDrawData* draw_data)
     // Copy data into continuous buffers
     uint8_t* vtx_dst = (uint8_t*)bd->VertexBuffer;
     uint8_t* idx_dst = (uint8_t*)bd->IndexBuffer;
-    for (int n = 0; n < draw_data->CmdListsCount; n++)
+    for (int n = 0; n < draw_data->CmdLists.Size; n++)
     {
         const ImDrawList* cmd_list = draw_data->CmdLists[n];
 
@@ -242,7 +279,7 @@ void ImGui_ImplGX2_RenderDrawData(ImDrawData* draw_data)
     // (Because we merged all buffers into a single one, we maintain our own offset into them)
     int global_vtx_offset = 0;
     int global_idx_offset = 0;
-    for (int n = 0; n < draw_data->CmdListsCount; n++)
+    for (int n = 0; n < draw_data->CmdLists.Size; n++)
     {
         const ImDrawList* cmd_list = draw_data->CmdLists[n];
 
@@ -252,8 +289,7 @@ void ImGui_ImplGX2_RenderDrawData(ImDrawData* draw_data)
             if (pcmd->UserCallback != NULL)
             {
                 // User callback, registered via ImDrawList::AddCallback()
-                // (ImDrawCallback_ResetRenderState is a special callback value used by the user to request the renderer to reset render state.)
-                if (pcmd->UserCallback == ImDrawCallback_ResetRenderState)
+                if (pcmd->UserCallback == ImGui_ImplGX2_DrawCallback_ResetRenderState)
                     ImGui_ImplGX2_SetupRenderState(draw_data, fb_width, fb_height);
                 else
                     pcmd->UserCallback(cmd_list, pcmd);
@@ -274,7 +310,7 @@ void ImGui_ImplGX2_RenderDrawData(ImDrawData* draw_data)
                 GX2SetScissor((uint32_t)clip_min.x, (uint32_t)clip_min.y, (uint32_t)(clip_max.x - clip_min.x), (uint32_t)(clip_max.y - clip_min.y));
 
                 // Bind texture, Draw
-                ImGui_ImplGX2_Texture* tex = (ImGui_ImplGX2_Texture*) pcmd->GetTexID();
+                ImGui_ImplGX2_Texture* tex = reinterpret_cast<ImGui_ImplGX2_Texture*>(pcmd->GetTexID());
                 IM_ASSERT(tex && "TextureID cannot be NULL");
 
                 GX2SetPixelTexture(&tex->Texture, 0);
